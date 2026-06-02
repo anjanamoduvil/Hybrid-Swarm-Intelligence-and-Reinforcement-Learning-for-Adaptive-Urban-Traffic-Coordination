@@ -1,0 +1,18 @@
+# Traffic Monitoring & Adaptive Signal System - Configuration
+# This file is loaded by detector.py to coordinate parameter values among slices.
+
+# Path to YOLOv8 model weights.
+# Switched to yolov8s.pt (Small) by default for significantly higher accuracy (especially for small bikes/motorcycles).
+# Use 'yolov8n.pt' for maximum CPU speed, or 'yolov8m.pt' for even higher accuracy.
+model_path: "yolov8s.pt"
+
+# Path to input traffic intersection video.
+video_path: "traffic_sample.mp4"
+
+# Minimum confidence threshold for vehicle filtering.
+# Lowered to 0.20 to capture lower-confidence small vehicles and bikes.
+conf_threshold: 0.20
+
+# Resizing dimensions [width, height] for uniform frame processing.
+# Set to null or a higher resolution (e.g. [1024, 768]) to preserve tiny detail for far-away bikes.
+resize_dims: [800, 600]

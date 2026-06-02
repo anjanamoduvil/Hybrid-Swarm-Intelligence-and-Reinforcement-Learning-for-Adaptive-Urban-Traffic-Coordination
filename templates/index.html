@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swarm Coordination - Member 1 YOLOv8 Pipeline</title>
+    <!-- Premium Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0a0d14;
+            --panel-bg: rgba(18, 22, 32, 0.95);
+            --border-color: rgba(255, 255, 255, 0.05);
+            --accent-primary: #3b82f6; /* Unified Cobalt Blue */
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --font-outfit: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 45%);
+            color: var(--text-main);
+            font-family: var(--font-outfit);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 2.5rem;
+        }
+
+        /* Container Layout */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Top HUD Bar - High-End Monochromatic header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .logo-section h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+        }
+
+        .logo-section p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-primary);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-primary);
+            animation: pulse 2.0s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+
+        /* Main Workspace Grid */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1.62fr 1fr;
+            gap: 2rem;
+        }
+
+        /* Video Feed Widget */
+        .video-feed-widget {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .widget-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-main);
+            border-left: 3px solid var(--accent-primary);
+            padding-left: 12px;
+        }
+
+        .video-container {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            position: relative;
+        }
+
+        .video-stream {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Right Control & Dashboard Column */
+        .controls-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Stats Cards - Clean Unified List */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.2rem 1.6rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            transition: border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background-color: var(--accent-primary); /* Unified cobalt accents on all cards */
+        }
+
+        .stat-label {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 2.3rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-main); /* Unified white values */
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <!-- Top HUD Banner -->
+    <header>
+        <div class="logo-section">
+            <h1>Traffic Ingestion Terminal</h1>
+        </div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            <span>SYSTEM ACTIVE</span>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="workspace-grid">
+        <!-- Live YOLO Stream View -->
+        <div class="video-feed-widget">
+            <div class="widget-title">
+                <span>Active YOLOv8 Camera Ingestion Feed</span>
+                <span style="font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-mono);" id="frame-counter">Initializing video stream...</span>
+            </div>
+            <div class="video-container">
+                <img src="/video_feed" alt="YOLOv8 Active Stream" class="video-stream">
+            </div>
+        </div>
+
+        <!-- Dashboard Panel -->
+        <div class="controls-column">
+            <!-- Dynamic Stats Cards vertical stack -->
+            <div class="metrics-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Vehicles Detected</div>
+                    <div class="stat-value" id="val-total">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Cars Count</div>
+                    <div class="stat-value" id="val-cars">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Trucks / Buses</div>
+                    <div class="stat-value" id="val-trucks">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Bikes (Motorcycles/Bicycles)</div>
+                    <div class="stat-value" id="val-bikes">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Pedestrians (Walking People)</div>
+                    <div class="stat-value" id="val-peds">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time Dashboard Sync -->
+<script>
+    async function fetchMetrics() {
+        try {
+            const res = await fetch('/api/metrics');
+            if (res.ok) {
+                const data = await res.json();
+                
+                // Update stats counts dynamically
+                document.getElementById('val-total').innerText = data.total_vehicles;
+                document.getElementById('val-cars').innerText = data.cars;
+                document.getElementById('val-trucks').innerText = data.trucks_buses;
+                document.getElementById('val-bikes').innerText = data.bikes;
+                document.getElementById('val-peds').innerText = data.pedestrians;
+
+                // Update frame index tally
+                document.getElementById('frame-counter').innerText = `Active Frame: ${data.frame_num}`;
+            }
+        } catch (e) {
+            console.error("Metrics sync error:", e);
+        }
+    }
+
+    // High frequency metric polling (sync every 300ms)
+    setInterval(fetchMetrics, 300);
+    fetchMetrics();
+</script>
+</body>
+</html>
