@@ -200,6 +200,40 @@
             font-family: var(--font-mono);
             color: var(--text-main); /* Unified white values */
         }
+
+        /* ── Member 3: Density band accent colours ── */
+        .stat-card.band-low::before  { background-color: #00c800; }
+        .stat-card.band-med::before  { background-color: #ffa500; }
+        .stat-card.band-high::before { background-color: #dc2626; }
+
+        .band-low  .stat-value { color: #4ade80; }
+        .band-med  .stat-value { color: #fb923c; }
+        .band-high .stat-value { color: #f87171; }
+
+        /* ── Member 3: Congestion alert banner ── */
+        .alert-banner {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(180, 0, 0, 0.75);
+            border: 1px solid rgba(255, 80, 80, 0.4);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #fff;
+            animation: flash 1s infinite;
+        }
+
+        .alert-banner.active { display: flex; }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.65; }
+        }
     </style>
 </head>
 <body>
@@ -216,6 +250,12 @@
         </div>
     </header>
 
+    <!-- Member 3: Congestion Alert Banner -->
+    <div class="alert-banner" id="alert-banner">
+        <span>⚠</span>
+        <span id="alert-text">HIGH CONGESTION ALERT</span>
+    </div>
+ 
     <!-- Main Grid -->
     <div class="workspace-grid">
         <!-- Live YOLO Stream View -->
@@ -253,6 +293,11 @@
                     <div class="stat-label">Pedestrians (Walking People)</div>
                     <div class="stat-value" id="val-peds">--</div>
                 </div>
+                <!-- Member 3: Density Band -->
+                <div class="stat-card" id="card-density">
+                    <div class="stat-label">Traffic Density Band</div>
+                    <div class="stat-value" id="val-density">--</div>
+                </div>
             </div>
         </div>
     </div>
@@ -275,6 +320,26 @@
 
                 // Update frame index tally
                 document.getElementById('frame-counter').innerText = `Active Frame: ${data.frame_num}`;
+
+                // Member 3: Density band card
+                const densityEl   = document.getElementById('val-density');
+                const densityCard = document.getElementById('card-density');
+                const band        = data.density_band || '--';
+                densityEl.innerText = band;
+                densityCard.classList.remove('band-low', 'band-med', 'band-high');
+                if (band === 'LOW')  densityCard.classList.add('band-low');
+                if (band === 'MED')  densityCard.classList.add('band-med');
+                if (band === 'HIGH') densityCard.classList.add('band-high');
+
+                // Member 3: Congestion alert banner
+                const alertBanner = document.getElementById('alert-banner');
+                const alertText   = document.getElementById('alert-text');
+                if (data.alert_active) {
+                    alertText.innerText = `!! HIGH CONGESTION ALERT — ${data.total_vehicles} VEHICLES DETECTED !!`;
+                    alertBanner.classList.add('active');
+                } else {
+                    alertBanner.classList.remove('active');
+                }
             }
         } catch (e) {
             console.error("Metrics sync error:", e);
