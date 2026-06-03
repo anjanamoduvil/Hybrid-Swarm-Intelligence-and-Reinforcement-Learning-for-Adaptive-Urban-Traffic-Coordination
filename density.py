@@ -1,12 +1,12 @@
 """
 density.py — Density Estimation & Congestion Classification
-Member 3: Traffic Monitoring & Adaptive Signal System
+Member 3: Urban Traffic Monitoring & Adaptive Signal System
 """
 
 import csv
 import os
 from datetime import datetime
-from config import THRESHOLDS, CSV_LOG_PATH
+import config as _cfg
 
 
 def compute_density(vehicle_count: int) -> float:
@@ -14,7 +14,7 @@ def compute_density(vehicle_count: int) -> float:
     Compute a normalized density score (0.0 – 1.0) from raw vehicle count.
     Uses the HIGH threshold as the saturation point.
     """
-    high = THRESHOLDS["high"]
+    high = _cfg.THRESHOLDS["high"]
     return min(vehicle_count / high, 1.0)
 
 
@@ -25,9 +25,9 @@ def classify_density(vehicle_count: int) -> str:
     Returns:
         str: 'LOW', 'MED', or 'HIGH'
     """
-    if vehicle_count <= THRESHOLDS["low"]:
+    if vehicle_count <= _cfg.THRESHOLDS["low"]:
         return "LOW"
-    elif vehicle_count <= THRESHOLDS["med"]:
+    elif vehicle_count <= _cfg.THRESHOLDS["med"]:
         return "MED"
     else:
         return "HIGH"
@@ -37,17 +37,19 @@ def should_trigger_alert(vehicle_count: int) -> bool:
     """
     Return True when vehicle count exceeds the HIGH threshold.
     """
-    return vehicle_count > THRESHOLDS["high"]
+    return vehicle_count > _cfg.THRESHOLDS["high"]
 
 
 def log_count_to_csv(frame_number: int, vehicle_count: int, band: str) -> None:
     """
     Append one row (timestamp, frame, count, band) to the CSV log.
     Creates the file with a header row if it does not exist yet.
+    Reads CSV_LOG_PATH from config at call-time so tests can override it.
     """
-    file_exists = os.path.isfile(CSV_LOG_PATH)
+    path = _cfg.CSV_LOG_PATH
+    file_exists = os.path.isfile(path)
 
-    with open(CSV_LOG_PATH, mode="a", newline="") as csvfile:
+    with open(path, mode="a", newline="") as csvfile:
         fieldnames = ["timestamp", "frame", "vehicle_count", "band"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 

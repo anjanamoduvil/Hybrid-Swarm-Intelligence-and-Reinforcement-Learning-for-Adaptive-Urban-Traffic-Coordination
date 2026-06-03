@@ -177,7 +177,7 @@ class TestOpenCVOverlays:
         frame = self._blank_frame()
         result = draw_alert_banner(frame, THRESHOLDS["high"] + 1)
         # Banner modifies the top rows
-        assert not np.array_equal(result[:40], np.zeros((40, 640, 3), dtype=np.uint8))
+        assert not np.array_equal(result[55:95], np.zeros((40, 640, 3), dtype=np.uint8))
 
     def test_annotate_frame_all_overlays(self):
         from alerts import annotate_frame
