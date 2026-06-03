@@ -17,9 +17,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from detector import TrafficDetector
+<<<<<<< HEAD
  
 # Member 3: density helpers
 from density import compute_density, classify_density, should_trigger_alert, log_count_to_csv
+=======
+>>>>>>> origin/master
 
 app = FastAPI(title="Traffic Swarm Coordination - Member 1 Pipeline")
 
@@ -41,6 +44,7 @@ global_metrics = {
     "trucks_buses": 0,
     "bikes": 0,
     "pedestrians": 0,
+<<<<<<< HEAD
     "model_path\": detector.model_path,
     "conf_threshold": detector.conf_threshold,
     "video_path": detector.video_path,
@@ -48,6 +52,11 @@ global_metrics = {
     "density_band": "LOW",
     "density_score": 0.0,
     "alert_active": False,
+=======
+    "model_path": detector.model_path,
+    "conf_threshold": detector.conf_threshold,
+    "video_path": detector.video_path
+>>>>>>> origin/master
 }
 
 def generate_frames():

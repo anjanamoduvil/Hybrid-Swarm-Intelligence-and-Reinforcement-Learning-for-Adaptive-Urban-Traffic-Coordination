@@ -200,6 +200,7 @@
             font-family: var(--font-mono);
             color: var(--text-main); /* Unified white values */
         }
+<<<<<<< HEAD
 
         /* ── Member 3: Density band accent colours ── */
         .stat-card.band-low::before  { background-color: #00c800; }
@@ -234,6 +235,8 @@
             0%, 100% { opacity: 1; }
             50%       { opacity: 0.65; }
         }
+=======
+>>>>>>> origin/master
     </style>
 </head>
 <body>
@@ -250,12 +253,15 @@
         </div>
     </header>
 
+<<<<<<< HEAD
     <!-- Member 3: Congestion Alert Banner -->
     <div class="alert-banner" id="alert-banner">
         <span>⚠</span>
         <span id="alert-text">HIGH CONGESTION ALERT</span>
     </div>
  
+=======
+>>>>>>> origin/master
     <!-- Main Grid -->
     <div class="workspace-grid">
         <!-- Live YOLO Stream View -->
@@ -293,11 +299,14 @@
                     <div class="stat-label">Pedestrians (Walking People)</div>
                     <div class="stat-value" id="val-peds">--</div>
                 </div>
+<<<<<<< HEAD
                 <!-- Member 3: Density Band -->
                 <div class="stat-card" id="card-density">
                     <div class="stat-label">Traffic Density Band</div>
                     <div class="stat-value" id="val-density">--</div>
                 </div>
+=======
+>>>>>>> origin/master
             </div>
         </div>
     </div>
@@ -320,6 +329,7 @@
 
                 // Update frame index tally
                 document.getElementById('frame-counter').innerText = `Active Frame: ${data.frame_num}`;
+<<<<<<< HEAD
 
                 // Member 3: Density band card
                 const densityEl   = document.getElementById('val-density');
@@ -340,6 +350,8 @@
                 } else {
                     alertBanner.classList.remove('active');
                 }
+=======
+>>>>>>> origin/master
             }
         } catch (e) {
             console.error("Metrics sync error:", e);
