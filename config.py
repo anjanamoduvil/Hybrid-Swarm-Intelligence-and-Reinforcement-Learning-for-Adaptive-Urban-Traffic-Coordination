@@ -5,9 +5,9 @@ Traffic Monitoring & Adaptive Signal System
 
 # ── Member 3: Density band thresholds (vehicle count) ───────────────────────
 THRESHOLDS = {
-    "low":  5,   # <= 5  vehicles → LOW
-    "med":  10,  # <= 10 vehicles → MED
-    "high": 15,  # > 15 vehicles  → HIGH (also triggers alert)
+    "low":  3,   # <= 3  vehicles → LOW
+    "med":  6,   # <= 6  vehicles → MED
+    "high": 10,  # >  10 vehicles → HIGH  (also triggers alert)
 }
 
 # ── Member 3: CSV log output path ────────────────────────────────────────────

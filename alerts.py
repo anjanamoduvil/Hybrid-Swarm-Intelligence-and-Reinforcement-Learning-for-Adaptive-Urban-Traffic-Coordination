@@ -179,3 +179,29 @@ def annotate_frame(frame: np.ndarray, vehicle_count: int, density: float) -> np.
     frame = draw_density_bar(frame, vehicle_count, density)
     frame = draw_alert_banner(frame, vehicle_count)
     return frame
+
+
+def draw_lane_rois(frame: np.ndarray, roi1: list, roi2: list, l1_count: int, l2_count: int) -> np.ndarray:
+    """
+    Renders semi-transparent Regions of Interest (ROIs) on the frame for Lane 1 and Lane 2.
+    """
+    overlay = frame.copy()
+
+    # Lane 1 (Cyan/Blue Theme BGR: 255, 235, 100)
+    if roi1:
+        x1, y1, x2, y2 = roi1
+        cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 235, 100), -1)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 235, 100), 2, cv2.LINE_AA)
+        cv2.putText(frame, f"L1 (MAIN) VEHICLES: {l1_count}", (x1 + 10, y1 + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
+
+    # Lane 2 (Magenta/Purple Theme BGR: 210, 100, 255)
+    if roi2:
+        x1, y1, x2, y2 = roi2
+        cv2.rectangle(overlay, (x1, y1), (x2, y2), (210, 100, 255), -1)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (210, 100, 255), 2, cv2.LINE_AA)
+        cv2.putText(frame, f"L2 (CROSS) VEHICLES: {l2_count}", (x1 + 10, y1 + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
+
+    # Blend overlays (low opacity so we don't hide the vehicles)
+    alpha = 0.08
+    cv2.addWeighted(overlay, alpha, frame, 1.0 - alpha, 0, frame)
+    return frame

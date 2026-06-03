@@ -64,3 +64,37 @@ def log_count_to_csv(frame_number: int, vehicle_count: int, band: str) -> None:
                 "band": band,
             }
         )
+
+
+def log_dual_counts_to_csv(frame_number: int, l1_count: int, l1_band: str, l2_count: int, l2_band: str) -> None:
+    """
+    Append one row (timestamp, frame, lane1_count, lane1_band, lane2_count, lane2_band)
+    to the CSV log. Creates the file with a header row if it does not exist yet.
+    """
+    path = _cfg.CSV_LOG_PATH
+    file_exists = os.path.isfile(path)
+
+    with open(path, mode="a", newline="") as csvfile:
+        fieldnames = [
+            "timestamp", 
+            "frame", 
+            "lane1_count", 
+            "lane1_band", 
+            "lane2_count", 
+            "lane2_band"
+        ]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow(
+            {
+                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "frame": frame_number,
+                "lane1_count": l1_count,
+                "lane1_band": l1_band,
+                "lane2_count": l2_count,
+                "lane2_band": l2_band
+            }
+        )

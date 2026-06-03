@@ -17,7 +17,7 @@ from detector import TrafficDetector
 from tracker import VehicleTracker
 from density import compute_density, classify_density, should_trigger_alert, log_count_to_csv
 from alerts import annotate_frame as m3_annotate_frame
-from signal import AdaptiveSignalController
+from traffic_signal import AdaptiveSignalController
 from compare import EfficiencyTracker, draw_traffic_light_hud
 
 
