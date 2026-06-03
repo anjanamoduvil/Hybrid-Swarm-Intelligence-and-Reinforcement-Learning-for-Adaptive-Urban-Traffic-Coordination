@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-Traffic Swarm Coordination - Member 1: High-Performance YOLOv8 Pipeline
-Web Application Interface
+app.py — Web Application Interface
+Traffic Monitoring & Adaptive Signal System
 
-This server hosts the web dashboard for the active Member 1 vertical slice.
-It streams visual frames directly from TrafficDetector and serves real-time metric APIs.
+Integrates all 4 member modules into a single FastAPI server:
+  Member 1 — YOLOv8 detection pipeline  (detector.py)
+  Member 2 — Vehicle tracker             (tracker.py)
+  Member 3 — Density estimation & alerts (density.py / alerts.py)
+  Member 4 — Adaptive signal controller  (signal.py / compare.py)
 """
 
 import time
-import os
 import cv2
 import numpy as np
 from fastapi import FastAPI, Request
@@ -16,130 +18,153 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+# Member 1
 from detector import TrafficDetector
-<<<<<<< HEAD
- 
-# Member 3: density helpers
+
+# Member 2
+from tracker import VehicleTracker
+
+# Member 3
 from density import compute_density, classify_density, should_trigger_alert, log_count_to_csv
-=======
->>>>>>> origin/master
+from alerts import annotate_frame as m3_annotate_frame
 
-app = FastAPI(title="Traffic Swarm Coordination - Member 1 Pipeline")
+# Member 4
+from signal import AdaptiveSignalController
+from compare import EfficiencyTracker, draw_traffic_light_hud
 
-# Mount static files and templates
-# Directories templates/ and static/ are located in the active workspace
+app = FastAPI(title="Traffic Monitoring & Adaptive Signal System")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Initialize our custom high-performance detector
-detector = TrafficDetector(config_path="config.yaml")
+# ── Module initialisation ────────────────────────────────────────────────────
+detector       = TrafficDetector(config_path="config.yaml")
+vehicle_tracker = VehicleTracker()
+signal_ctrl    = AdaptiveSignalController()
+efficiency     = EfficiencyTracker()
 
-# Global metrics state synchronized from our active pipeline
+# ── Shared metrics state (updated by generate_frames, read by /api/metrics) ──
 global_metrics = {
-    "frame_num": 0,
-    "total_frames": 0,
-    "fps": 0.0,
+    # Member 1
+    "frame_num":      0,
+    "total_frames":   0,
+    "fps":            0.0,
     "total_vehicles": 0,
-    "cars": 0,
-    "trucks_buses": 0,
-    "bikes": 0,
-    "pedestrians": 0,
-<<<<<<< HEAD
-    "model_path\": detector.model_path,
+    "cars":           0,
+    "trucks_buses":   0,
+    "bikes":          0,
+    "pedestrians":    0,
+    "model_path":     detector.model_path,
     "conf_threshold": detector.conf_threshold,
-    "video_path": detector.video_path,
-    # Member 3: density fields
-    "density_band": "LOW",
-    "density_score": 0.0,
-    "alert_active": False,
-=======
-    "model_path": detector.model_path,
-    "conf_threshold": detector.conf_threshold,
-    "video_path": detector.video_path
->>>>>>> origin/master
+    "video_path":     detector.video_path,
+    # Member 3
+    "density_band":   "LOW",
+    "density_score":  0.0,
+    "alert_active":   False,
+    # Member 4
+    "signal_state":       "GREEN",
+    "signal_time_left":   0.0,
+    "adaptive_duration":  10,
+    "saved_time_total":   0.0,
 }
+
 
 def generate_frames():
     """
-    Ingests frames and detections from Member 1's TrafficDetector,
-    updates global metrics, and yields encoded MJPEG frames for the web browser.
+    Core frame loop — chains all 4 member modules together and yields
+    MJPEG-encoded frames for the browser video stream.
     """
     global global_metrics
-    
-    # Preload the YOLO model
+
     if detector.model is None:
         detector.load_model()
-        
+
     while True:
-        # Open video capture stream using generator
         for frame, detections in detector.process_video():
-            # Update dynamic metrics tallies
-            global_metrics["frame_num"] += 1
-            
-            cars = sum(1 for d in detections if d["class_name"] == "Car")
+
+            # ── Member 1: counts from detections ────────────────────────────
+            cars        = sum(1 for d in detections if d["class_name"] == "Car")
             trucks_buses = sum(1 for d in detections if d["class_name"] in {"Truck", "Bus"})
-            bikes = sum(1 for d in detections if d["class_name"] in {"Motorcycle", "Bicycle"})
+            bikes       = sum(1 for d in detections if d["class_name"] in {"Motorcycle", "Bicycle"})
             pedestrians = sum(1 for d in detections if d["class_name"] == "Pedestrian")
-            
-            global_metrics["cars"] = cars
-            global_metrics["trucks_buses"] = trucks_buses
-            global_metrics["bikes"] = bikes
-            global_metrics["pedestrians"] = pedestrians
-            global_metrics["total_vehicles"] = cars + trucks_buses + bikes
-            
-            # FPS calculation update
-            global_metrics["fps"] = float(np.random.uniform(25.0, 30.0)) if "fps" not in global_metrics else global_metrics["fps"]
-            
-            # Encode frame to JPEG
-            ret, buffer = cv2.imencode('.jpg', frame)
+            vehicle_count = cars + trucks_buses + bikes
+
+            global_metrics["frame_num"]     += 1
+            global_metrics["cars"]           = cars
+            global_metrics["trucks_buses"]   = trucks_buses
+            global_metrics["bikes"]          = bikes
+            global_metrics["pedestrians"]    = pedestrians
+            global_metrics["total_vehicles"] = vehicle_count
+
+            # ── Member 2: tracker update ─────────────────────────────────────
+            bboxes = [d["bbox"] for d in detections]
+            vehicle_tracker.update(bboxes)
+
+            # ── Member 3: density + alert overlays ───────────────────────────
+            density = compute_density(vehicle_count)
+            band    = classify_density(vehicle_count)
+            alert   = should_trigger_alert(vehicle_count)
+            log_count_to_csv(global_metrics["frame_num"], vehicle_count, band)
+
+            frame = m3_annotate_frame(frame, vehicle_count, density)
+
+            global_metrics["density_band"]  = band
+            global_metrics["density_score"] = round(density, 3)
+            global_metrics["alert_active"]  = alert
+
+            # ── Member 4: signal state machine + comparison overlay ──────────
+            state, time_left, cycle_done = signal_ctrl.update_state_machine(vehicle_count)
+
+            if cycle_done:
+                adaptive_dur = signal_ctrl.calculate_adaptive_duration(vehicle_count)
+                efficiency.register_completed_cycle(adaptive_dur, vehicle_count)
+
+            frame = draw_traffic_light_hud(frame, state, time_left, efficiency)
+
+            global_metrics["signal_state"]      = state
+            global_metrics["signal_time_left"]  = round(time_left, 1)
+            global_metrics["adaptive_duration"] = signal_ctrl.calculate_adaptive_duration(vehicle_count)
+            global_metrics["saved_time_total"]  = round(efficiency.accumulated_saved_time, 1)
+
+            # ── Encode & yield MJPEG frame ────────────────────────────────────
+            ret, buffer = cv2.imencode(".jpg", frame)
             if not ret:
                 continue
-                
-            frame_bytes = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-            
-            # Artificial sleep to regulate stream rate
+            yield (b"--frame\r\n"
+                   b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n")
+
             time.sleep(0.01)
-            
-        # Reset and restart video on stream completion for continuous display
+
         global_metrics["frame_num"] = 0
         print("[Web Server] Video completed, restarting stream loop...")
 
+
 @app.get("/")
 def index(request: Request):
-    """
-    Serves the premium Member 1 Dashboard HTML interface.
-    """
     return templates.TemplateResponse("index.html", {"request": request})
+
 
 @app.get("/video_feed")
 def video_feed():
-    """
-    Streams the live YOLOv8 annotated frames in real-time.
-    """
     return StreamingResponse(
         generate_frames(),
         media_type="multipart/x-mixed-replace; boundary=frame",
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate, private",
-            "Pragma": "no-cache",
-            "Expires": "0"
-        }
+            "Pragma":        "no-cache",
+            "Expires":       "0",
+        },
     )
+
 
 @app.get("/api/metrics")
 def get_metrics():
-    """
-    Returns the real-time pipeline status as JSON.
-    """
-    # Dynamic sync of configuration parameters in case they changed in config.yaml
-    global_metrics["model_path"] = detector.model_path
+    global_metrics["model_path"]     = detector.model_path
     global_metrics["conf_threshold"] = detector.conf_threshold
-    global_metrics["video_path"] = detector.video_path
+    global_metrics["video_path"]     = detector.video_path
     return JSONResponse(content=global_metrics)
+
 
 if __name__ == "__main__":
     import uvicorn
-    # Start on standard port 8000
     uvicorn.run(app, host="127.0.0.1", port=8000)

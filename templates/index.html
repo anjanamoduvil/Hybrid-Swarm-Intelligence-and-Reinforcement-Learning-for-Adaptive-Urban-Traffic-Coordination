@@ -200,7 +200,6 @@
             font-family: var(--font-mono);
             color: var(--text-main); /* Unified white values */
         }
-<<<<<<< HEAD
 
         /* ── Member 3: Density band accent colours ── */
         .stat-card.band-low::before  { background-color: #00c800; }
@@ -235,8 +234,15 @@
             0%, 100% { opacity: 1; }
             50%       { opacity: 0.65; }
         }
-=======
->>>>>>> origin/master
+
+        /* ── Member 4: Signal state card accent colours ── */
+        .stat-card.signal-green::before  { background-color: #00c800; }
+        .stat-card.signal-yellow::before { background-color: #fbbf24; }
+        .stat-card.signal-red::before    { background-color: #dc2626; }
+
+        .signal-green  .stat-value { color: #4ade80; }
+        .signal-yellow .stat-value { color: #fde047; }
+        .signal-red    .stat-value { color: #f87171; }
     </style>
 </head>
 <body>
@@ -253,15 +259,12 @@
         </div>
     </header>
 
-<<<<<<< HEAD
     <!-- Member 3: Congestion Alert Banner -->
     <div class="alert-banner" id="alert-banner">
         <span>⚠</span>
         <span id="alert-text">HIGH CONGESTION ALERT</span>
     </div>
- 
-=======
->>>>>>> origin/master
+
     <!-- Main Grid -->
     <div class="workspace-grid">
         <!-- Live YOLO Stream View -->
@@ -279,6 +282,7 @@
         <div class="controls-column">
             <!-- Dynamic Stats Cards vertical stack -->
             <div class="metrics-grid">
+                <!-- Member 1: Detection counts -->
                 <div class="stat-card">
                     <div class="stat-label">Total Vehicles Detected</div>
                     <div class="stat-value" id="val-total">--</div>
@@ -299,14 +303,24 @@
                     <div class="stat-label">Pedestrians (Walking People)</div>
                     <div class="stat-value" id="val-peds">--</div>
                 </div>
-<<<<<<< HEAD
                 <!-- Member 3: Density Band -->
                 <div class="stat-card" id="card-density">
                     <div class="stat-label">Traffic Density Band</div>
                     <div class="stat-value" id="val-density">--</div>
                 </div>
-=======
->>>>>>> origin/master
+                <!-- Member 4: Signal state + timer -->
+                <div class="stat-card" id="card-signal">
+                    <div class="stat-label">Signal State</div>
+                    <div class="stat-value" id="val-signal">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Signal Time Remaining</div>
+                    <div class="stat-value" id="val-timer">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Cumulative Time Saved</div>
+                    <div class="stat-value" id="val-saved">--</div>
+                </div>
             </div>
         </div>
     </div>
@@ -319,17 +333,16 @@
             const res = await fetch('/api/metrics');
             if (res.ok) {
                 const data = await res.json();
-                
-                // Update stats counts dynamically
+
+                // Member 1: Update stats counts dynamically
                 document.getElementById('val-total').innerText = data.total_vehicles;
                 document.getElementById('val-cars').innerText = data.cars;
                 document.getElementById('val-trucks').innerText = data.trucks_buses;
                 document.getElementById('val-bikes').innerText = data.bikes;
                 document.getElementById('val-peds').innerText = data.pedestrians;
 
-                // Update frame index tally
+                // Member 1: Update frame index tally
                 document.getElementById('frame-counter').innerText = `Active Frame: ${data.frame_num}`;
-<<<<<<< HEAD
 
                 // Member 3: Density band card
                 const densityEl   = document.getElementById('val-density');
@@ -350,8 +363,20 @@
                 } else {
                     alertBanner.classList.remove('active');
                 }
-=======
->>>>>>> origin/master
+
+                // Member 4: Signal state card
+                const signalEl   = document.getElementById('val-signal');
+                const signalCard = document.getElementById('card-signal');
+                const state      = data.signal_state || '--';
+                signalEl.innerText = state;
+                signalCard.classList.remove('signal-green', 'signal-yellow', 'signal-red');
+                if (state === 'GREEN')  signalCard.classList.add('signal-green');
+                if (state === 'YELLOW') signalCard.classList.add('signal-yellow');
+                if (state === 'RED')    signalCard.classList.add('signal-red');
+
+                // Member 4: Timer + saved time
+                document.getElementById('val-timer').innerText = `${data.signal_time_left}s`;
+                document.getElementById('val-saved').innerText = `${data.saved_time_total}s`;
             }
         } catch (e) {
             console.error("Metrics sync error:", e);
