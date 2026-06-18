@@ -34,6 +34,10 @@ from alerts import draw_lane_rois
 from traffic_signal import CoordinatedSignalController
 from compare import EfficiencyTracker, draw_traffic_light_hud
 
+# Member 1 Traffic Prediction Extension
+from prediction import predict
+import config as _cfg
+
 app = FastAPI(title="Traffic Monitoring & Adaptive Signal System")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -45,6 +49,7 @@ with open("config.yaml", "r") as f:
 
 roi_lane1 = config_data.get("roi_lane1")
 roi_lane2 = config_data.get("roi_lane2")
+num_lanes = 2 if (roi_lane2 and len(roi_lane2) == 4) else 1
 queue_speed_threshold = config_data.get("queue_speed_threshold", 1.5)
 
 # ── Module initialisation ────────────────────────────────────────────────────
@@ -60,6 +65,7 @@ global_metrics = {
     "model_path": detector.model_path,
     "conf_threshold": detector.conf_threshold,
     "video_path": detector.video_path,
+    "num_lanes": num_lanes,
     
     # Global Classification Counts
     "total_vehicles": 0,
@@ -96,6 +102,16 @@ global_metrics = {
     "pso_cost_history": [0.0],
     "pso_cost": 0.0,
     "pso_active_lane": 1,
+
+    # Member 1 Forecast Telemetry
+    "l1_pred_congestion": 0.0,
+    "l1_pred_queue": 0,
+    "l1_pred_trend": "STABLE",
+    "l1_pred_confidence": 1.0,
+    "l2_pred_congestion": 0.0,
+    "l2_pred_queue": 0,
+    "l2_pred_trend": "STABLE",
+    "l2_pred_confidence": 1.0,
 }
 
 
@@ -197,6 +213,28 @@ def generate_frames():
 
             # Log to CSV
             log_dual_counts_to_csv(frame_num, l1_count, l1_band, l2_count, l2_band)
+
+            # Member 1 Traffic Forecast Update
+            if frame_num % 30 == 0 or frame_num == 1:
+                try:
+                    l1_pred_c, l1_pred_q, l1_pred_t, l1_pred_conf = predict(_cfg.CSV_LOG_PATH, n_steps=3, lane=1)
+                    if num_lanes == 2:
+                        l2_pred_c, l2_pred_q, l2_pred_t, l2_pred_conf = predict(_cfg.CSV_LOG_PATH, n_steps=3, lane=2)
+                    else:
+                        l2_pred_c, l2_pred_q, l2_pred_t, l2_pred_conf = 0.0, 0, "STABLE", 1.0
+
+                    global_metrics.update({
+                        "l1_pred_congestion": l1_pred_c,
+                        "l1_pred_queue": l1_pred_q,
+                        "l1_pred_trend": l1_pred_t,
+                        "l1_pred_confidence": l1_pred_conf,
+                        "l2_pred_congestion": l2_pred_c,
+                        "l2_pred_queue": l2_pred_q,
+                        "l2_pred_trend": l2_pred_t,
+                        "l2_pred_confidence": l2_pred_conf,
+                    })
+                except Exception as e:
+                    print(f"[Prediction Engine] Error: {e}")
 
             # 4. Update Signaling State Machine
             state, time_left, cycle_done = signal_ctrl.update_state_machine(
@@ -309,4 +347,4 @@ def get_metrics():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

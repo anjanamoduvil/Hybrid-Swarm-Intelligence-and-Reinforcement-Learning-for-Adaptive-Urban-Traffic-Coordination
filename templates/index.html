@@ -473,7 +473,7 @@
                     </div>
                     
                     <!-- Coordinated Cross Symbol -->
-                    <div style="font-size: 2rem; color: var(--text-muted); opacity: 0.3;">
+                    <div id="cross-symbol" style="font-size: 2rem; color: var(--text-muted); opacity: 0.3;">
                         ✛
                     </div>
 
@@ -556,6 +556,71 @@
                     <div class="pso-metric">
                         <div class="pso-label">Pedestrians</div>
                         <div class="pso-value" id="val-peds" style="color: #fff;">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traffic Forecasting & Predictions Panel -->
+            <div class="panel-card" style="border-left: 4px solid #f59e0b; background: var(--panel-bg); margin-bottom: 0.5rem;">
+                <div class="widget-title" style="border-left-color: #f59e0b;">
+                    <span style="color: #f59e0b;">Traffic Forecasting & Predictions</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(245, 158, 11, 0.1); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">Regression & MA Model</span>
+                </div>
+                <div id="forecast-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+                    <!-- Lane 1 Predictions -->
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 8px; padding: 12px; position: relative;">
+                        <h4 style="font-size: 0.85rem; color: #60a5fa; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">Lane 1 Forecast</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Future Congestion</span>
+                                <span id="l1-pred-congestion" style="font-size: 1rem; font-weight: 700; font-family: var(--font-mono); color: #fff;">--</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Future Queue Length</span>
+                                <span id="l1-pred-queue" style="font-size: 1rem; font-weight: 700; font-family: var(--font-mono); color: #fff;">--</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Trend Trend</span>
+                                <span id="l1-pred-trend" class="congestion-badge" style="padding: 2px 6px; font-size: 0.68rem; border-radius: 4px;">--</span>
+                            </div>
+                            <div style="margin-top: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">Confidence</span>
+                                    <span id="l1-pred-confidence" style="font-size: 0.75rem; font-family: var(--font-mono); font-weight: bold; color: #10b981;">--</span>
+                                </div>
+                                <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
+                                    <div id="l1-pred-conf-bar" style="width: 0%; height: 100%; background: #10b981; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lane 2 Predictions -->
+                    <div id="l2-forecast-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 8px; padding: 12px; position: relative;">
+                        <h4 style="font-size: 0.85rem; color: #f472b6; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">Lane 2 Forecast</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Future Congestion</span>
+                                <span id="l2-pred-congestion" style="font-size: 1rem; font-weight: 700; font-family: var(--font-mono); color: #fff;">--</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Future Queue Length</span>
+                                <span id="l2-pred-queue" style="font-size: 1rem; font-weight: 700; font-family: var(--font-mono); color: #fff;">--</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Trend Trend</span>
+                                <span id="l2-pred-trend" class="congestion-badge" style="padding: 2px 6px; font-size: 0.68rem; border-radius: 4px;">--</span>
+                            </div>
+                            <div style="margin-top: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">Confidence</span>
+                                    <span id="l2-pred-confidence" style="font-size: 0.75rem; font-family: var(--font-mono); font-weight: bold; color: #10b981;">--</span>
+                                </div>
+                                <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
+                                    <div id="l2-pred-conf-bar" style="width: 0%; height: 100%; background: #10b981; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -686,6 +751,62 @@
             if (res.ok) {
                 const data = await res.json();
 
+                // Dynamic Layout Adaptation (1-Lane vs 2-Lane)
+                if (data.num_lanes === 1) {
+                    // Hide Lane 2 traffic light, cross symbol, and alert banner
+                    document.getElementById('light-box-l2').style.display = 'none';
+                    if (document.getElementById('cross-symbol')) {
+                        document.getElementById('cross-symbol').style.display = 'none';
+                    }
+                    document.getElementById('alert-l2').style.display = 'none';
+                    
+                    // Modify forecast card columns to single-column layout
+                    const forecastContainer = document.getElementById('forecast-container');
+                    if (forecastContainer) {
+                        forecastContainer.style.gridTemplateColumns = '1fr';
+                    }
+                    const l2ForecastCard = document.getElementById('l2-forecast-card');
+                    if (l2ForecastCard) {
+                        l2ForecastCard.style.display = 'none';
+                    }
+
+                    // Modify lanes stack columns to single-column layout
+                    const lanesContainer = document.querySelector('.lanes-container');
+                    if (lanesContainer) {
+                        lanesContainer.style.gridTemplateColumns = '1fr';
+                    }
+                    const l2Card = document.querySelector('.lane-card.l2');
+                    if (l2Card) {
+                        l2Card.style.display = 'none';
+                    }
+                } else {
+                    // Show Lane 2 traffic light, cross symbol
+                    document.getElementById('light-box-l2').style.display = 'flex';
+                    if (document.getElementById('cross-symbol')) {
+                        document.getElementById('cross-symbol').style.display = 'block';
+                    }
+                    
+                    // Modify forecast card columns to dual-column layout
+                    const forecastContainer = document.getElementById('forecast-container');
+                    if (forecastContainer) {
+                        forecastContainer.style.gridTemplateColumns = '1fr 1fr';
+                    }
+                    const l2ForecastCard = document.getElementById('l2-forecast-card');
+                    if (l2ForecastCard) {
+                        l2ForecastCard.style.display = 'block';
+                    }
+
+                    // Modify lanes stack columns to dual-column layout
+                    const lanesContainer = document.querySelector('.lanes-container');
+                    if (lanesContainer) {
+                        lanesContainer.style.gridTemplateColumns = '1fr 1fr';
+                    }
+                    const l2Card = document.querySelector('.lane-card.l2');
+                    if (l2Card) {
+                        l2Card.style.display = 'flex';
+                    }
+                }
+
                 // Frame Index
                 document.getElementById('frame-counter').innerText = `Active Frame: ${data.frame_num}`;
 
@@ -741,6 +862,29 @@
                 
                 // Redraw PSO Convergence Sparkline
                 drawPSOChart(data.pso_cost_history);
+
+                // Traffic Forecast Sync (Member 1)
+                document.getElementById('l1-pred-congestion').innerText = data.l1_pred_congestion.toFixed(2);
+                document.getElementById('l1-pred-queue').innerText = data.l1_pred_queue;
+                const l1TrendEl = document.getElementById('l1-pred-trend');
+                l1TrendEl.innerText = data.l1_pred_trend;
+                l1TrendEl.className = 'congestion-badge';
+                if (data.l1_pred_trend === 'RISING') l1TrendEl.classList.add('band-high');
+                else if (data.l1_pred_trend === 'FALLING') l1TrendEl.classList.add('band-low');
+                else l1TrendEl.classList.add('band-med');
+                document.getElementById('l1-pred-confidence').innerText = `${Math.round(data.l1_pred_confidence * 100)}%`;
+                document.getElementById('l1-pred-conf-bar').style.width = `${data.l1_pred_confidence * 100}%`;
+
+                document.getElementById('l2-pred-congestion').innerText = data.l2_pred_congestion.toFixed(2);
+                document.getElementById('l2-pred-queue').innerText = data.l2_pred_queue;
+                const l2TrendEl = document.getElementById('l2-pred-trend');
+                l2TrendEl.innerText = data.l2_pred_trend;
+                l2TrendEl.className = 'congestion-badge';
+                if (data.l2_pred_trend === 'RISING') l2TrendEl.classList.add('band-high');
+                else if (data.l2_pred_trend === 'FALLING') l2TrendEl.classList.add('band-low');
+                else l2TrendEl.classList.add('band-med');
+                document.getElementById('l2-pred-confidence').innerText = `${Math.round(data.l2_pred_confidence * 100)}%`;
+                document.getElementById('l2-pred-conf-bar').style.width = `${data.l2_pred_confidence * 100}%`;
 
                 // System Performance
                 document.getElementById('sys-saved').innerText = `${data.saved_time_total}s`;

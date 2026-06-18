@@ -22,14 +22,21 @@ graph TD
 
 ## 👥 Team Member Roles & Contributions
 
-### 🔹 Member 1 (You): Traffic Ingestion & Object Detection Pipeline
-* **Files**: [detector.py](file:///c:/Users/VICTUS/TEST/detector.py), [config.yaml](file:///c:/Users/VICTUS/TEST/config.yaml)
+### 🔹 Member 1 (You): Traffic Ingestion, Object Detection & Traffic Prediction Module
+* **Files**: [detector.py](file:///c:/Users/VICTUS/TEST/detector.py), [config.yaml](file:///c:/Users/VICTUS/TEST/config.yaml), [prediction.py](file:///c:/Users/VICTUS/TEST/prediction.py), [test_prediction.py](file:///c:/Users/VICTUS/TEST/test_prediction.py)
 * **Responsibilities**:
   * Configured declarative configuration management loading parameters for video sources, model weights, confidence thresholds, and canvas resolutions.
   * Programmed high-speed, real-time vehicle detection and class filtering using **YOLOv8** weights.
   * Classified entities into specific traffic categories (`Car`, `Truck`, `Bus`, `Motorcycle`, `Bicycle`, `Pedestrian`).
   * Implemented an overlapping/rider filter to prevent duplicate boxes when a pedestrian is riding a motorcycle.
   * Engineered a custom OpenCV Heads-Up Display (HUD) overlay at the top of the video feed, rendering neon-colored bounding boxes, class labels, confidences, current frames, and processing speed (FPS).
+  * **Week 3 Extension — Traffic Prediction Module**:
+    * Programmed a **Moving-Average Smoother** to filter out vehicle count noise for reliable congestion metrics.
+    * Engineered a **Weighted Linear Regression** forecaster (using `scikit-learn`'s `LinearRegression` with linearly decaying weights that prioritize recent frames) to predict future congestion levels and queue lengths $n$ steps ahead.
+    * Coded a dynamic trend classifier flagging traffic density changes as `RISING`, `FALLING`, or `STABLE` based on regression slopes.
+    * Programmed a prediction confidence metric using the weighted $R^2$ coefficient of determination.
+    * Developed the glassmorphic **Traffic Forecasting & Predictions** dashboard card in `index.html` with real-time UI updates, color-coded trend badges, and confidence progress bars.
+    * Built an automatic **Dynamic Layout Adaptation** system that checks the active ROIs in `config.yaml` to hide/show Lane 2 cards, metrics, alerts, and lights automatically.
 * **Key Packages Used**:
   * `ultralytics`: Used to instantiate and run YOLOv8 object detection models.
   * `opencv-python` (cv2): Used to capture video, resize frames, crop regions, and draw anti-aliased HUD elements.
@@ -96,7 +103,7 @@ pip install ultralytics opencv-python pyyaml numpy scipy fastapi uvicorn jinja2 
 Verify individual modules using pytest:
 ```bash
 python -m unittest test_detector.py -v
-python -m pytest test_density.py test_traffic_signal.py -v
+python -m pytest test_density.py test_traffic_signal.py test_prediction.py -v
 ```
 
 ### 3. Launching the Web Server
