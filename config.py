@@ -13,6 +13,10 @@ THRESHOLDS = {
 # ── Member 3: CSV log output path ────────────────────────────────────────────
 CSV_LOG_PATH = "density_log.csv"
 
+# ── Member 3 (Week 3): Multi-Intersection Coordination ───────────────────────
+N_INTERSECTIONS  = 4
+PROPAGATION_RATE = 0.3
+MULTI_LOG_PATH   = "intersection_grid_log.csv"
 
 # ── Member 4: Adaptive Signal Configuration ──────────────────────────────────
 MIN_GREEN      = 10   # Minimum green duration (seconds)
