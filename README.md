@@ -14,7 +14,8 @@ graph TD
     B --> C[Member 2: SORT Tracker Kalman Filter]
     C --> D[ROI Partitioning: Lane 1 & Lane 2]
     D --> E[Member 3: Density & Congestion Analyzer]
-    E --> F[Member 4: Coordinated PSO Signal Controller]
+    E --> E2[Member 3: Multi-Intersection Grid + Propagation]
+    E2 --> F[Member 4: Coordinated PSO Signal Controller]
     F --> G[Unified Web Interface & HUD Rendering]
 ```
 
@@ -57,16 +58,24 @@ graph TD
 
 ---
 
-### 🔹 Member 3: Density Estimation & Congestion Alerts
-* **Files**: [density.py](file:///c:/Users/VICTUS/TEST/density.py), [alerts.py](file:///c:/Users/VICTUS/TEST/alerts.py)
+### 🔹 Member 3: Density Estimation, Congestion Alerts & Multi-Intersection Coordination
+* **Files**: [density.py](file:///c:/Users/VICTUS/TEST/density.py), [alerts.py](file:///c:/Users/VICTUS/TEST/alerts.py), [intersection_sim.py](file:///c:/Users/VICTUS/TEST/intersection_sim.py), [test_intersection_sim.py](file:///c:/Users/VICTUS/TEST/test_intersection_sim.py)
 * **Responsibilities**:
   * Created a normalized traffic density estimator (`[0.0 - 1.0]`) mapping vehicle counts relative to lane saturation levels.
   * Classified lane congestion levels into `LOW`, `MED`, and `HIGH` bands dynamically.
   * Implemented event-driven safety alarms showing a flashing congestion alert warning banner at the top of the HUD and UI when a lane exceeds thresholds.
   * Developed a dual-lane logging module to write timestamps, vehicle counts, and congestion levels into a persistent CSV database.
+  * **Week 3 Extension — Multi-Intersection Coordination**:
+    * Designed an `IntersectionGrid` class simulating **3–4 connected intersections**, each modelled as an independent `Intersection` node with its own vehicle count, density band, and history.
+    * Implemented **congestion propagation**: a `HIGH`-band intersection spills a configurable fraction (`PROPAGATION_RATE`) of its vehicle load onto its neighbouring nodes each tick, modelling how gridlock at one junction spreads to adjacent junctions.
+    * Built a **coordinated green-wave allocator** that ranks intersections by descending congestion load each tick and assigns green-light durations (bounded by `MIN_GREEN`/`MAX_GREEN`) with a priority head-start bonus for the most congested nodes first.
+    * Integrated Member 1's `predict()` forecasting function per intersection — each node writes its own `lane1_count`-formatted CSV log so the existing prediction module can be called without any modification, with a local trend-based fallback when insufficient history exists.
+    * Designed the integration point for Member 2's RL agent (`RLAgent.step(state)`), allowing the green-wave allocator to apply a learned adjustment on top of the swarm-priority base allocation.
+    * Wrote a 29-test `pytest` suite (`test_intersection_sim.py`) covering grid initialization, propagation accuracy, green-wave ordering, forecast integration (including a real end-to-end call into `prediction.py`), and CSV logging — all passing against the live Week 2/3 codebase.
 * **Key Packages Used**:
-  * `csv` & `os`: Used to check, create, and append telemetry logging records.
+  * `csv` & `os`: Used to check, create, and append telemetry logging records (per-intersection and grid-summary logs).
   * `datetime`: Used to timestamp logged congestion occurrences.
+  * `pytest`: Used to validate grid behaviour and the real integration with `prediction.predict()`.
 
 ---
 
@@ -103,7 +112,7 @@ pip install ultralytics opencv-python pyyaml numpy scipy fastapi uvicorn jinja2 
 Verify individual modules using pytest:
 ```bash
 python -m unittest test_detector.py -v
-python -m pytest test_density.py test_traffic_signal.py test_prediction.py -v
+python -m pytest test_density.py test_traffic_signal.py test_prediction.py test_evaluator.py test_intersection_sim.py -v
 ```
 
 ### 3. Launching the Web Server
