@@ -149,8 +149,8 @@ class TrafficDetector:
 
         # Reclassify and filter riders:
         # 1. If a person overlaps with a vehicle, they are a rider (we ignore the duplicate box).
-        # 2. If a person does NOT overlap with any vehicle, it means YOLO missed the motorcycle body, so we reclassify them as a Motorcycle.
-        reclassified_bikes = []
+        # 2. If a person does NOT overlap with any vehicle, they are a true Pedestrian.
+        true_pedestrians = []
         for p_det in raw_persons:
             has_overlap = False
             for v_det in raw_vehicles:
@@ -158,11 +158,9 @@ class TrafficDetector:
                     has_overlap = True
                     break
             if not has_overlap:
-                p_det["class_name"] = "Motorcycle"
-                p_det["class_id"] = 3
-                reclassified_bikes.append(p_det)
+                true_pedestrians.append(p_det)
 
-        return raw_vehicles + reclassified_bikes
+        return raw_vehicles + true_pedestrians
 
     def draw_hud(self, frame, detections, frame_num, total_frames, fps):
         """

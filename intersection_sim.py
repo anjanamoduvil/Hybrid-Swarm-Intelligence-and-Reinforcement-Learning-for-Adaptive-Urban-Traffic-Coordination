@@ -289,6 +289,12 @@ class IntersectionGrid:
 
         propagation = self.propagate()
 
+        # Simulate vehicles departing (clear simulated queues so they don't grow infinitely)
+        for node_id, node in self.nodes.items():
+            if not counts or node_id not in counts:
+                # Remove ~20% of vehicles per tick to simulate green light flow
+                node.vehicle_count = max(0, int(node.vehicle_count * 0.80))
+
         for node_id, node in self.nodes.items():
             node.record()
             self._log_node(node_id, node)

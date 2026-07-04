@@ -530,6 +530,17 @@
                 </div>
             </div>
 
+            <!-- 4-Intersection Grid Panel -->
+            <div class="panel-card" style="border-left: 4px solid #8b5cf6; margin-bottom: 1.5rem;">
+                <div class="widget-title" style="border-left-color: #8b5cf6;">
+                    <span style="color: #8b5cf6;">4-Intersection Grid Status</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(139, 92, 246, 0.1); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">Coordinated Wave</span>
+                </div>
+                <div class="swarm-stats" style="grid-template-columns: repeat(4, 1fr);" id="grid-nodes-container">
+                    <!-- Nodes will be populated dynamically via JS -->
+                </div>
+            </div>
+
             <!-- Global Vehicle Classification Tally -->
             <div class="panel-card" style="border-left: 4px solid var(--accent-primary);">
                 <div class="widget-title" style="border-left-color: var(--accent-primary);">
@@ -687,6 +698,17 @@
                 <div class="sys-card">
                     <div class="sys-val" id="sys-fps">--</div>
                     <div class="sys-lbl">Camera Frame Rate (FPS)</div>
+                </div>
+            </div>
+
+            <!-- Strategy Comparison Chart Panel -->
+            <div class="panel-card" style="border-left: 4px solid #ef4444;">
+                <div class="widget-title" style="border-left-color: #ef4444;">
+                    <span style="color: #ef4444;">Performance Evaluation Charts</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(239, 68, 68, 0.1); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">Matplotlib</span>
+                </div>
+                <div style="width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05); background: #fff; margin-top: 1rem;">
+                    <img id="eval-chart" src="/static/comparison_chart.png" alt="Strategy Comparison" style="width: 100%; height: auto; display: block;">
                 </div>
             </div>
         </div>
@@ -886,6 +908,31 @@
                 document.getElementById('l2-pred-confidence').innerText = `${Math.round(data.l2_pred_confidence * 100)}%`;
                 document.getElementById('l2-pred-conf-bar').style.width = `${data.l2_pred_confidence * 100}%`;
 
+                // Member 3: 4-Intersection Grid Sync
+                const gridContainer = document.getElementById('grid-nodes-container');
+                if (gridContainer && data.grid_priority && data.grid_priority.length > 0) {
+                    let gridHtml = '';
+                    for (let i = 0; i < 4; i++) {
+                        const priorityRank = data.grid_priority.indexOf(i) + 1;
+                        const band = data.grid_bands[i] || 'LOW';
+                        const greenTime = data.grid_green_times[i] || 0;
+                        
+                        let bandColor = '#34d399';
+                        if (band === 'MED') bandColor = '#fbbf24';
+                        if (band === 'HIGH') bandColor = '#f87171';
+                        
+                        gridHtml += `
+                        <div class="pso-metric" style="border-top: 2px solid ${bandColor};">
+                            <div class="pso-label" style="color: #fff;">Node ${i}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Band: <span style="color: ${bandColor}; font-weight: bold;">${band}</span></div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Green: <span style="color: #fff;">${greenTime}s</span></div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Priority: <span style="color: #8b5cf6; font-weight: bold;">#${priorityRank}</span></div>
+                        </div>
+                        `;
+                    }
+                    gridContainer.innerHTML = gridHtml;
+                }
+
                 // System Performance
                 document.getElementById('sys-saved').innerText = `${data.saved_time_total}s`;
                 // Mock or calculate real pipeline FPS (average around 30)
@@ -899,6 +946,14 @@
     // High frequency metrics polling (every 300ms)
     setInterval(fetchMetrics, 300);
     fetchMetrics();
+
+    // Cache-bust the comparison chart every 5 seconds
+    setInterval(() => {
+        const chartEl = document.getElementById('eval-chart');
+        if (chartEl) {
+            chartEl.src = '/static/comparison_chart.png?t=' + Date.now();
+        }
+    }, 5000);
 </script>
 </body>
 </html>

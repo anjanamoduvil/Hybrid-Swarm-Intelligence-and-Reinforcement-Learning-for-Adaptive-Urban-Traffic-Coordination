@@ -5,7 +5,7 @@
 model_path: "yolov8s.pt"
 
 # Path to input traffic intersection video.
-video_path: "traffic_sample.mp4"
+video_path: "Junction 1 D1.mp4"
 
 # Minimum confidence threshold for vehicle filtering.
 conf_threshold: 0.20
@@ -13,11 +13,10 @@ conf_threshold: 0.20
 # Resizing dimensions [width, height] for uniform frame processing.
 resize_dims: [800, 600]
 
-# --- Dual Lane Regions of Interest (ROIs) ---
-# ROIs are defined as [x1, y1, x2, y2] bounding boxes on the 800x600 canvas
-# Lane 1 represents North-Bound (left half) and Lane 2 represents East-Bound (right half)
-roi_lane1: [50, 250, 390, 580]
-roi_lane2: [410, 250, 750, 580]
+# --- Single Lane Region of Interest (ROI) ---
+# ROI is defined as [x1, y1, x2, y2] bounding box on the 800x600 canvas
+# Lane 1 covers the entire visible road.
+roi_lane1: [50, 250, 750, 580]
 
 # --- Queue & Velocity Tracking Settings ---
 # Vehicles with speed (pixels per frame) below this threshold are considered queued/stationary
