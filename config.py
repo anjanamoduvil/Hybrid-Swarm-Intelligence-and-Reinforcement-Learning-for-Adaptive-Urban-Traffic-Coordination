@@ -18,11 +18,6 @@ N_INTERSECTIONS  = 4
 PROPAGATION_RATE = 0.3
 MULTI_LOG_PATH   = "intersection_grid_log.csv"
 
-# ── Member 1 & 2 (Week 3): Prediction & RL Configuration ─────────────────────
-PREDICTION_WINDOW = 5   # moving-average window for M1
-RL_ALPHA = 0.1          # learning rate for M2
-RL_GAMMA = 0.9          # discount factor for M2
-
 # ── Member 4: Adaptive Signal Configuration ──────────────────────────────────
 MIN_GREEN      = 10   # Minimum green duration (seconds)
 MAX_GREEN      = 60   # Maximum green duration (seconds)
@@ -31,3 +26,16 @@ FIXED_BASELINE = 30   # Fixed-time baseline for comparison (seconds)
 
 # ── Member 4: Performance metrics log path ───────────────────────────────────
 CYCLE_LOG_PATH = "signal_cycle_log.csv"
+
+# ── Member 3 (Week 4): Federated Learning Prototype ──────────────────────────
+FED_ROUNDS          = 8      # Default number of federated training rounds
+FED_CONVERGENCE_TOL = 1e-3   # Max change in global weights to declare convergence
+FED_MIN_LOCAL_POINTS = 2     # Minimum local history points needed to fit a local model
+
+# ── Member 3 (Week 4): Digital Twin Network Simulation ───────────────────────
+TWIN_LOG_PATH        = "digital_twin_log.csv"
+TWIN_DEFAULT_HORIZON = 5     # Default number of ticks to simulate ahead
+RECOVERY_MAX_TICKS   = 20    # Max ticks to search for congestion recovery
+DISTURBANCE_DEFAULT_VEHICLES = 25  # Default surge size used in resilience scenarios
+DISCHARGE_RATE_PER_SEC = 0.5  # Vehicles cleared per second of green time (saturation flow)
+
