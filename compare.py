@@ -48,7 +48,7 @@ class EfficiencyTracker:
             })
 
 
-def draw_traffic_light_hud(frame: np.ndarray, state: str, time_left: float, tracker: EfficiencyTracker, last_pso_results: dict = None, l1_metrics: dict = None, l2_metrics: dict = None) -> np.ndarray:
+def draw_traffic_light_hud(frame: np.ndarray, state: str, time_left: float, tracker: EfficiencyTracker, last_pso_results: dict = None, l1_metrics: dict = None, l2_metrics: dict = None, rl_action: str = None) -> np.ndarray:
     """
     Renders side-by-side coordinated traffic lights and a telemetry/swarm analytics dashboard.
     """
@@ -106,7 +106,7 @@ def draw_traffic_light_hud(frame: np.ndarray, state: str, time_left: float, trac
 
     # ── 2. Render Comparative Analytics Side-By-Side Dashboard (Bottom Left) ──
     panel_w = 400
-    panel_h = 175
+    panel_h = 220
     panel_y = h - panel_h - 20
     
     cv2.rectangle(frame, (20, panel_y), (20 + panel_w, h - 20), (12, 14, 20), -1)
@@ -140,5 +140,10 @@ def draw_traffic_light_hud(frame: np.ndarray, state: str, time_left: float, trac
 
     # Cumulative Time Saved vs Baseline (fixed 30s green intervals)
     cv2.putText(frame, f"PSO Swarm Time Saved: {tracker.accumulated_saved_time:.1f}s", (32, panel_y + 160), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 255, 100), 1, cv2.LINE_AA)
+
+    # ── 3. Render RL Decision Panel (Member 2) ────────────────────────────────
+    cv2.putText(frame, "RL AGENT ADAPTATION:", (32, panel_y + 185), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (100, 200, 255), 1, cv2.LINE_AA)
+    rl_str = f"Latest Action: {rl_action}" if rl_action else "Latest Action: AWAITING_STATE"
+    cv2.putText(frame, rl_str, (32, panel_y + 200), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (230, 230, 230), 1, cv2.LINE_AA)
 
     return frame

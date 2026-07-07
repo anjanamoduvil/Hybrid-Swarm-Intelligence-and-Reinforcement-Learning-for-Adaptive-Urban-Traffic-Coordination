@@ -541,6 +541,28 @@
                 </div>
             </div>
 
+            <!-- Dynamic Traffic Graph (Member 1) -->
+            <div class="panel-card" style="border-left: 4px solid #3b82f6; margin-bottom: 1.5rem;">
+                <div class="widget-title" style="border-left-color: #3b82f6;">
+                    <span style="color: #3b82f6;">Live Network Graph (GCN)</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">NetworkX</span>
+                </div>
+                <div style="width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05); background: #0f141e; margin-top: 1rem; text-align: center;">
+                    <img id="network-graph-img" src="/static/traffic_graph.png" alt="Dynamic Traffic Graph" style="width: 100%; height: auto; display: block; max-height: 250px; object-fit: contain;">
+                </div>
+            </div>
+
+            <!-- Graph Analytics Panel (Member 1) -->
+            <div class="panel-card" style="border-left: 4px solid #06b6d4; margin-bottom: 1.5rem;">
+                <div class="widget-title" style="border-left-color: #06b6d4;">
+                    <span style="color: #06b6d4;">Graph Analytics & Criticality</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(6, 182, 212, 0.1); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">GCN Model</span>
+                </div>
+                <div class="swarm-stats" style="grid-template-columns: repeat(4, 1fr);" id="graph-analytics-container">
+                    <!-- Analytics populated dynamically via JS -->
+                </div>
+            </div>
+
             <!-- Global Vehicle Classification Tally -->
             <div class="panel-card" style="border-left: 4px solid var(--accent-primary);">
                 <div class="widget-title" style="border-left-color: var(--accent-primary);">
@@ -933,6 +955,25 @@
                     gridContainer.innerHTML = gridHtml;
                 }
 
+                // Member 1: Graph Analytics Sync
+                const analyticsContainer = document.getElementById('graph-analytics-container');
+                if (analyticsContainer && data.node_importance && data.node_importance.length > 0) {
+                    let analyticsHtml = '';
+                    for (let i = 0; i < data.node_importance.length; i++) {
+                        const importanceScore = (data.node_importance[i] * 100).toFixed(1) + '%';
+                        const gcnPred = data.graph_predictions && data.graph_predictions[i] ? data.graph_predictions[i].toFixed(2) : '0.00';
+                        
+                        analyticsHtml += `
+                        <div class="pso-metric" style="border-top: 2px solid #06b6d4;">
+                            <div class="pso-label" style="color: #fff;">Node ${i} (GCN)</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">GCN Pred: <span style="color: #fff; font-weight: bold;">${gcnPred}</span></div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Importance: <span style="color: #06b6d4; font-weight: bold;">${importanceScore}</span></div>
+                        </div>
+                        `;
+                    }
+                    analyticsContainer.innerHTML = analyticsHtml;
+                }
+
                 // System Performance
                 document.getElementById('sys-saved').innerText = `${data.saved_time_total}s`;
                 // Mock or calculate real pipeline FPS (average around 30)
@@ -952,6 +993,12 @@
         const chartEl = document.getElementById('eval-chart');
         if (chartEl) {
             chartEl.src = '/static/comparison_chart.png?t=' + Date.now();
+        }
+        
+        // Cache-bust the traffic graph every 5 seconds
+        const graphEl = document.getElementById('network-graph-img');
+        if (graphEl) {
+            graphEl.src = '/static/traffic_graph.png?t=' + Date.now();
         }
     }, 5000);
 </script>

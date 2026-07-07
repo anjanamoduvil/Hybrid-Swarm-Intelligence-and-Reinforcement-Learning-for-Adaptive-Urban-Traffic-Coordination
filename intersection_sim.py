@@ -35,6 +35,14 @@ try:
 except ImportError:
     RLAgent = None
 
+# ── Week 4 Member 1 Integrations ──────────────────────────────────────────────
+try:
+    from traffic_graph import DynamicTrafficGraph
+    from graph_intelligence import GraphIntelligenceModule
+except ImportError:
+    DynamicTrafficGraph = None
+    GraphIntelligenceModule = None
+
 
 class Intersection:
     """
@@ -97,6 +105,14 @@ class IntersectionGrid:
 
         self.log_path_prefix = log_path if log_path is not None else _cfg.MULTI_LOG_PATH
         self.tick_count = 0
+
+        # Week 4 Member 1 integrations
+        if DynamicTrafficGraph is not None:
+            self.traffic_graph = DynamicTrafficGraph(num_nodes=self.n, topology=self.topology)
+            self.graph_intelligence = GraphIntelligenceModule(num_nodes=self.n)
+        else:
+            self.traffic_graph = None
+            self.graph_intelligence = None
 
     def _default_topology(self) -> dict:
         """Build a simple line topology: each node connects to its immediate neighbour(s)."""
@@ -304,6 +320,42 @@ class IntersectionGrid:
         bands = {nid: node.band for nid, node in self.nodes.items()}
 
         self.tick_count += 1
+        
+        # ── Week 4 Member 1: Update Traffic Graph and run Intelligence ───────
+        graph_preds = {}
+        node_importance = []
+        if self.traffic_graph is not None:
+            for node_id, node in self.nodes.items():
+                self.traffic_graph.update_node(
+                    node_id=node_id,
+                    density=node.density,
+                    queue_length=node.vehicle_count * 0.8,
+                    waiting_time=node.vehicle_count * 5.0,
+                    average_speed=10.0 if node.band == "HIGH" else 30.0,
+                    signal_phase=1.0 if node_id in green_times else 0.0
+                )
+                for neighbor_id in node.neighbours:
+                    flow = (node.vehicle_count * _cfg.PROPAGATION_RATE) if node.band == "HIGH" else 0.0
+                    self.traffic_graph.update_edge(
+                        u=node_id, v=neighbor_id,
+                        flow=flow,
+                        travel_time=10.0,
+                        propagation_rate=_cfg.PROPAGATION_RATE,
+                        capacity=100.0
+                    )
+            
+            try:
+                self.traffic_graph.save_visualization("static/traffic_graph.png")
+            except Exception as e:
+                print(f"[Graph] Visual save failed: {e}")
+                
+            graph_snapshot = self.traffic_graph.get_snapshot()
+            if self.graph_intelligence:
+                target_congestion = [n.density for nid, n in self.nodes.items()]
+                self.graph_intelligence.train_step(graph_snapshot, target_congestion)
+                preds = self.graph_intelligence.predict_congestion(graph_snapshot)
+                graph_preds = {nid: float(preds[nid]) for nid in self.nodes.keys()}
+                node_importance = self.graph_intelligence.get_node_importance(graph_snapshot).tolist()
 
         return {
             "tick": self.tick_count,
@@ -311,6 +363,8 @@ class IntersectionGrid:
             "green_times": green_times,
             "priority_order": priority_order,
             "bands": bands,
+            "graph_predictions": graph_preds,
+            "node_importance": node_importance
         }
 
     def _log_node(self, node_id: int, node: "Intersection") -> None:

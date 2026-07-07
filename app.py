@@ -159,8 +159,9 @@ def generate_frames():
             last_frame_time = current_time
 
             # 1. Run Tracker
-            bboxes = [d["bbox"] for d in detections if d["class_name"] != "Pedestrian"]
-            tracks = vehicle_tracker.update(bboxes)
+            # Tracker requires [x1, y1, x2, y2, conf] and the raw frame for DeepSORT
+            bboxes = [d["bbox"] + [d["confidence"]] for d in detections if d["class_name"] != "Pedestrian"]
+            tracks = vehicle_tracker.update(bboxes, frame)
 
             # Calculate Global Classification Counts
             cars = sum(1 for d in detections if d["class_name"] == "Car")
@@ -232,6 +233,8 @@ def generate_frames():
                     "grid_priority": grid_res["priority_order"],
                     "grid_bands": grid_res["bands"],
                     "grid_green_times": grid_res["green_times"],
+                    "graph_predictions": grid_res.get("graph_predictions", {}),
+                    "node_importance": grid_res.get("node_importance", [])
                 })
 
             # Member 1 Traffic Forecast Update

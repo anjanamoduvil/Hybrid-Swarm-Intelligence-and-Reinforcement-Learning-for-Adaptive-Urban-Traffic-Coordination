@@ -38,6 +38,11 @@ graph TD
     * Programmed a prediction confidence metric using the weighted $R^2$ coefficient of determination.
     * Developed the glassmorphic **Traffic Forecasting & Predictions** dashboard card in `index.html` with real-time UI updates, color-coded trend badges, and confidence progress bars.
     * Built an automatic **Dynamic Layout Adaptation** system that checks the active ROIs in `config.yaml` to hide/show Lane 2 cards, metrics, alerts, and lights automatically.
+  * **Week 4 Extension — Dynamic Traffic Graph & Graph Intelligence Module**:
+    * Programmed a **NetworkX**-based `DynamicTrafficGraph` that continuously ingests live traffic density, queue lengths, speeds, and signal phases per intersection to dynamically build a connected graph representation of the traffic network.
+    * Engineered a PyTorch Geometric **Graph Convolutional Network (GCN)** (`TrafficGCN`) that consumes the real-time graph state to model network-wide congestion propagation and anticipate gridlock bottlenecks.
+    * Developed an online-learning `GraphIntelligenceModule` that performs forward passes predicting congestion 1–3 steps ahead for all nodes simultaneously, outputting network predictions and critical node importance scores.
+    * Embedded a real-time Network Graph visualizer inside the frontend Glassmorphic dashboard alongside a new **Graph Analytics & Criticality** panel that explicitly outputs the GCN predictions and node importance metrics.
 * **Key Packages Used**:
   * `ultralytics`: Used to instantiate and run YOLOv8 object detection models.
   * `opencv-python` (cv2): Used to capture video, resize frames, crop regions, and draw anti-aliased HUD elements.

@@ -18,6 +18,11 @@ N_INTERSECTIONS  = 4
 PROPAGATION_RATE = 0.3
 MULTI_LOG_PATH   = "intersection_grid_log.csv"
 
+# ── Member 1 & 2 (Week 3): Prediction & RL Configuration ─────────────────────
+PREDICTION_WINDOW = 5   # moving-average window for M1
+RL_ALPHA = 0.1          # learning rate for M2
+RL_GAMMA = 0.9          # discount factor for M2
+
 # ── Member 4: Adaptive Signal Configuration ──────────────────────────────────
 MIN_GREEN      = 10   # Minimum green duration (seconds)
 MAX_GREEN      = 60   # Maximum green duration (seconds)
