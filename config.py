@@ -31,3 +31,19 @@ FIXED_BASELINE = 30   # Fixed-time baseline for comparison (seconds)
 
 # ── Member 4: Performance metrics log path ───────────────────────────────────
 CYCLE_LOG_PATH = "signal_cycle_log.csv"
+
+# ── Member 3 (Week 4): Federated Learning Prototype ──────────────────────────
+FED_ROUNDS          = 8      # Default number of federated training rounds
+FED_CONVERGENCE_TOL = 1e-3   # Max change in global weights to declare convergence
+FED_MIN_LOCAL_POINTS = 2     # Minimum local history points needed to fit a local model
+
+# ── Member 3 (Week 4): Digital Twin Network Simulation ───────────────────────
+TWIN_LOG_PATH        = "digital_twin_log.csv"
+TWIN_DEFAULT_HORIZON = 5     # Default number of ticks to simulate ahead
+RECOVERY_MAX_TICKS   = 20    # Max ticks to search for congestion recovery
+DISTURBANCE_DEFAULT_VEHICLES = 25  # Default surge size used in resilience scenarios
+
+# Bonus vehicles/sec cleared on top of IntersectionGrid's own built-in ~20%
+# passive-departure baseline (see intersection_sim.tick()). Kept small since
+# it only needs to differentiate strategies, not replace the baseline flow.
+DISCHARGE_RATE_PER_SEC = 0.05
