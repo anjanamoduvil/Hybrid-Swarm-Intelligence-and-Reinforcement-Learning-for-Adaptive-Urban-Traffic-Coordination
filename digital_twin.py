@@ -10,10 +10,20 @@ Builds a virtual replica ("twin") of a live IntersectionGrid that:
     - predicts congestion recovery time after a simulated disturbance.
 
 The twin is deliberately a *separate* IntersectionGrid instance (never the
-live one) so experiments run inside it can never affect real traffic —
-only IntersectionGrid.propagate() / node bookkeeping is reused, so this
-module stays consistent with Member 3's Week 3 congestion model without
-modifying intersection_sim.py.
+live one) so experiments run inside it can never affect real traffic.
+
+Compatibility note (updated for Member 1's Week 4 graph integration):
+IntersectionGrid now optionally attaches a DynamicTrafficGraph +
+GraphIntelligenceModule to itself and, on every tick(), retrains the GCN
+and overwrites the shared "static/traffic_graph.png" dashboard asset. A
+Digital Twin must not inherit that side effect — hypothetical/simulated
+future ticks should never retrain the live model or overwrite the live
+dashboard's graph image with imagined data. sync() explicitly detaches
+those two attributes from the twin's mirror grid so tick()'s Week-4
+Member-1 branch is skipped entirely inside the twin (the `if
+self.traffic_graph is not None:` guard in intersection_sim.py becomes a
+no-op). This keeps the twin fast and side-effect-free without touching
+intersection_sim.py itself.
 """
 
 from __future__ import annotations
@@ -83,26 +93,65 @@ class DigitalTwin:
             self.mirror.nodes[node_id].history = list(node.history)
         self.mirror.tick_count = self.source_grid.tick_count
 
-    # ── Discharge (service-rate) model ────────────────────────────────────
+        # Detach Member 1's Week 4 graph-intelligence integration from the
+        # twin — see module docstring. Harmless no-op if those attributes
+        # don't exist / are already None (e.g. torch/torch_geometric not
+        # installed).
+        self.mirror.traffic_graph = None
+        self.mirror.graph_intelligence = None
 
-    def _apply_discharge(self, green_times: dict) -> None:
+    # ── Discharge (service-rate) bonus for strategy comparison ───────────
+
+    def _apply_strategy_discharge(self, green_times: dict) -> None:
         """
-        Model vehicles cleared during each node's green phase.
-
-        IntersectionGrid.tick()/propagate() (Week 3) only track arrivals
-        and neighbour propagation — they never remove vehicles that a
-        green phase actually discharges. A digital twin needs that
-        departure side to simulate realistic future evolution, so this
-        twin-only saturation-flow model reduces each node's vehicle_count
-        by (green_time_seconds * DISCHARGE_RATE_PER_SEC), floored at zero.
-        This lets alternative strategies (Task 5) produce genuinely
-        different traffic outcomes to compare.
+        IntersectionGrid.tick() already models a flat ~20% passive
+        departure baseline every tick, but that baseline is identical
+        regardless of signal strategy — so strategies alone can never be
+        told apart on vehicle_count evolution. This adds a small *extra*
+        clearance on top of that baseline, proportional to each node's
+        allocated green_time, so better-timed strategies visibly clear
+        more congestion than worse-timed ones (Task 5's "evaluate
+        alternative signal strategies").
         """
         rate = _cfg.DISCHARGE_RATE_PER_SEC
         for node_id, green_time in green_times.items():
             node = self.mirror.nodes[node_id]
-            cleared = green_time * rate
-            node.vehicle_count = max(0, int(round(node.vehicle_count - cleared)))
+            bonus_cleared = green_time * rate
+            node.vehicle_count = max(0, int(round(node.vehicle_count - bonus_cleared)))
+
+    def _step_with_strategy(self, strategy_fn) -> dict:
+        """
+        Advance the twin by one tick using a *substituted* strategy
+        instead of whatever grid.tick() would normally allocate,
+        mirroring tick()'s own step order (propagate -> passive discharge
+        -> record -> green-time allocation) so results stay comparable to
+        the live network, then layers on the strategy-proportional bonus
+        discharge described above.
+
+        Returns:
+            dict: {tick, green_times, avg_vehicle_count, max_vehicle_count, propagation}
+        """
+        propagation = self.mirror.propagate()
+
+        # Same passive-departure baseline as intersection_sim.tick().
+        for node in self.mirror.nodes.values():
+            node.vehicle_count = max(0, int(node.vehicle_count * 0.80))
+
+        for node in self.mirror.nodes.values():
+            node.record()
+
+        green_times = strategy_fn(self.mirror)
+        self._apply_strategy_discharge(green_times)
+        self.mirror.tick_count += 1
+
+        counts_now = [n.vehicle_count for n in self.mirror.nodes.values()]
+        return {
+            "tick": self.mirror.tick_count,
+            "green_times": green_times,
+            "avg_vehicle_count": round(sum(counts_now) / len(counts_now), 2),
+            "max_vehicle_count": max(counts_now),
+            "propagation": propagation,
+        }
 
     # ── Future evolution ─────────────────────────────────────────────────
 
@@ -110,7 +159,10 @@ class DigitalTwin:
         """
         Roll the twin forward n_ticks using the live network's own
         strategy (green-wave), to answer "what will traffic look like
-        soon if nothing changes?"
+        soon if nothing changes?" Delegates directly to
+        IntersectionGrid.tick() (now that graph-intelligence side effects
+        are detached, see sync()), so this stays exactly in sync with
+        whatever Member 1/2/4 change about the base tick() logic.
 
         Args:
             n_ticks: How many ticks to simulate ahead (default: config.TWIN_DEFAULT_HORIZON).
@@ -124,9 +176,7 @@ class DigitalTwin:
         trajectory = []
         for t in range(n_ticks):
             counts = external_counts[t] if external_counts and t < len(external_counts) else None
-            result = self.mirror.tick(counts)
-            self._apply_discharge(result["green_times"])
-            trajectory.append(result)
+            trajectory.append(self.mirror.tick(counts))
         return trajectory
 
     # ── Alternative-strategy evaluation ──────────────────────────────────
@@ -154,23 +204,7 @@ class DigitalTwin:
             counts = external_counts[t] if external_counts and t < len(external_counts) else None
             if counts:
                 self.mirror.set_counts(counts)
-
-            propagation = self.mirror.propagate()
-            for node in self.mirror.nodes.values():
-                node.record()
-
-            green_times = strategy_fn(self.mirror)
-            self._apply_discharge(green_times)
-            self.mirror.tick_count += 1
-
-            counts_now = [n.vehicle_count for n in self.mirror.nodes.values()]
-            trajectory.append({
-                "tick": self.mirror.tick_count,
-                "green_times": green_times,
-                "avg_vehicle_count": round(sum(counts_now) / len(counts_now), 2),
-                "max_vehicle_count": max(counts_now),
-                "propagation": propagation,
-            })
+            trajectory.append(self._step_with_strategy(strategy_fn))
 
         return trajectory
 
@@ -228,13 +262,7 @@ class DigitalTwin:
 
         band_trajectory = []
         for t in range(1, max_ticks + 1):
-            self.mirror.propagate()
-            for node in self.mirror.nodes.values():
-                node.record()
-            green_times = strategy_fn(self.mirror)
-            self._apply_discharge(green_times)
-            self.mirror.tick_count += 1
-
+            self._step_with_strategy(strategy_fn)
             band = self.mirror.nodes[node_id].band
             band_trajectory.append(band)
 

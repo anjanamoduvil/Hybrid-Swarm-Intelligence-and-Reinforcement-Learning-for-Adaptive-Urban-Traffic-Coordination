@@ -222,8 +222,11 @@ class TestTick:
     def test_tick_returns_expected_keys(self):
         grid = IntersectionGrid(n=3)
         result = grid.tick({0: 5, 1: 3, 2: 1})
+        # graph_predictions / node_importance added by Member 1's Week 4
+        # traffic_graph.py / graph_intelligence.py integration.
         assert set(result.keys()) == {
-            "tick", "propagation", "green_times", "priority_order", "bands"
+            "tick", "propagation", "green_times", "priority_order", "bands",
+            "graph_predictions", "node_importance",
         }
 
 

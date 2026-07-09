@@ -15,6 +15,8 @@ graph TD
     C --> D[ROI Partitioning: Lane 1 & Lane 2]
     D --> E[Member 3: Density & Congestion Analyzer]
     E --> E2[Member 3: Multi-Intersection Grid + Propagation]
+    E2 --> E3[Member 3: Federated Learning Prototype]
+    E2 --> E4[Member 3: Digital Twin Network Simulation]
     E2 --> F[Member 4: Coordinated PSO Signal Controller]
     F --> G[Unified Web Interface & HUD Rendering]
 ```
@@ -63,8 +65,8 @@ graph TD
 
 ---
 
-### 🔹 Member 3: Density Estimation, Congestion Alerts & Multi-Intersection Coordination
-* **Files**: [density.py](file:///c:/Users/VICTUS/TEST/density.py), [alerts.py](file:///c:/Users/VICTUS/TEST/alerts.py), [intersection_sim.py](file:///c:/Users/VICTUS/TEST/intersection_sim.py), [test_intersection_sim.py](file:///c:/Users/VICTUS/TEST/test_intersection_sim.py)
+### 🔹 Member 3: Density Estimation, Congestion Alerts, Multi-Intersection Coordination, Federated Learning & Digital Twin Simulation
+* **Files**: [density.py](file:///c:/Users/VICTUS/TEST/density.py), [alerts.py](file:///c:/Users/VICTUS/TEST/alerts.py), [intersection_sim.py](file:///c:/Users/VICTUS/TEST/intersection_sim.py), [test_intersection_sim.py](file:///c:/Users/VICTUS/TEST/test_intersection_sim.py), [federated_learning.py](file:///c:/Users/VICTUS/TEST/federated_learning.py), [test_federated_learning.py](file:///c:/Users/VICTUS/TEST/test_federated_learning.py), [digital_twin.py](file:///c:/Users/VICTUS/TEST/digital_twin.py), [test_digital_twin.py](file:///c:/Users/VICTUS/TEST/test_digital_twin.py)
 * **Responsibilities**:
   * Created a normalized traffic density estimator (`[0.0 - 1.0]`) mapping vehicle counts relative to lane saturation levels.
   * Classified lane congestion levels into `LOW`, `MED`, and `HIGH` bands dynamically.
@@ -77,10 +79,25 @@ graph TD
     * Integrated Member 1's `predict()` forecasting function per intersection — each node writes its own `lane1_count`-formatted CSV log so the existing prediction module can be called without any modification, with a local trend-based fallback when insufficient history exists.
     * Designed the integration point for Member 2's RL agent (`RLAgent.step(state)`), allowing the green-wave allocator to apply a learned adjustment on top of the swarm-priority base allocation.
     * Wrote a 29-test `pytest` suite (`test_intersection_sim.py`) covering grid initialization, propagation accuracy, green-wave ordering, forecast integration (including a real end-to-end call into `prediction.py`), and CSV logging — all passing against the live Week 2/3 codebase.
+  * **Week 4 Extension — Federated Learning Prototype** (`federated_learning.py`):
+    * Implemented a `LocalClient` per intersection that trains a local linear model on its own vehicle-count history — raw traffic data never leaves the intersection, only fitted parameters (`coef`, `intercept`) are shared.
+    * Built a `FederatedServer` performing **sample-weighted FedAvg** aggregation, with round-by-round convergence detection (`has_converged()`).
+    * Exposed `simulate_federated_learning()`, an end-to-end driver reporting **local accuracy** (per-node R²), **global accuracy per round**, **communication overhead** (exact bytes transmitted), and **convergence speed** (round at which global weights stabilize) — the four metrics required for evaluation.
+    * Wrote a 28-test `pytest` suite (`test_federated_learning.py`) covering client training/fallback behaviour, FedAvg aggregation correctness, convergence detection, communication-cost scaling, and full end-to-end simulation runs.
+  * **Week 4 Extension — Digital Twin Network Simulation** (`digital_twin.py`):
+    * Built a `DigitalTwin` class that clones a live `IntersectionGrid` into an isolated "mirror" grid (`sync()`), so every what-if experiment runs without ever touching real traffic state.
+    * Implemented `simulate_future()` to roll the twin forward via `IntersectionGrid.tick()` and forecast near-term traffic evolution under the network's current strategy.
+    * Implemented three interchangeable signal strategies — `green_wave` (Week 3's RL + priority order), `fixed_baseline`, and `density_only` — plus `run_scenario()` / `compare_strategies()` to evaluate them head-to-head from the same current state, layering a small strategy-proportional bonus discharge on top of `tick()`'s own passive-departure baseline so different strategies produce genuinely different outcomes.
+    * `sync()` explicitly detaches Member 1's `traffic_graph` / `graph_intelligence` objects from the twin's mirror grid, so hypothetical future ticks never retrain the live GCN or overwrite the shared `static/traffic_graph.png` dashboard asset with simulated data.
+    * Implemented `apply_disturbance()` + `predict_recovery_time()` / `run_resilience_scenario()` to inject a traffic surge and measure how many ticks it takes a node to drop out of the `HIGH` congestion band — feeding directly into Member 4's Network Resilience Analysis (Task 7).
+    * Wrote a 25-test `pytest` suite (`test_digital_twin.py`) covering state replication, graph-intelligence detachment safety, future simulation, strategy comparison, and disturbance/recovery scenarios.
 * **Key Packages Used**:
   * `csv` & `os`: Used to check, create, and append telemetry logging records (per-intersection and grid-summary logs).
   * `datetime`: Used to timestamp logged congestion occurrences.
   * `pytest`: Used to validate grid behaviour and the real integration with `prediction.predict()`.
+  * `numpy`: Used for local model fitting/evaluation math in the federated learning module.
+  * `scikit-learn` (`LinearRegression`): Used to fit each intersection's local federated model.
+  * `copy`: Used to deep-copy grid topology when syncing the Digital Twin.
 
 ---
 
@@ -110,14 +127,14 @@ The unified FastAPI web application orchestrates the entire pipeline:
 ### 1. Requirements
 Install the dependencies:
 ```bash
-pip install ultralytics opencv-python pyyaml numpy scipy fastapi uvicorn jinja2 pytest
+pip install ultralytics opencv-python pyyaml numpy scipy fastapi uvicorn jinja2 pytest pandas scikit-learn
 ```
 
 ### 2. Standalone Testing
 Verify individual modules using pytest:
 ```bash
 python -m unittest test_detector.py -v
-python -m pytest test_density.py test_traffic_signal.py test_prediction.py test_evaluator.py test_intersection_sim.py -v
+python -m pytest test_density.py test_traffic_signal.py test_prediction.py test_evaluator.py test_intersection_sim.py test_federated_learning.py test_digital_twin.py -v
 ```
 
 ### 3. Launching the Web Server
