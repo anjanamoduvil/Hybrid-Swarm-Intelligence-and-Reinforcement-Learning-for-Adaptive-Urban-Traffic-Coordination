@@ -14,7 +14,10 @@ graph TD
     B --> C[Member 2: SORT Tracker Kalman Filter]
     C --> D[ROI Partitioning: Lane 1 & Lane 2]
     D --> E[Member 3: Density & Congestion Analyzer]
-    E --> F[Member 4: Coordinated PSO Signal Controller]
+    E --> E2[Member 3: Multi-Intersection Grid + Propagation]
+    E2 --> E3[Member 3: Federated Learning Prototype]
+    E2 --> E4[Member 3: Digital Twin Network Simulation]
+    E2 --> F[Member 4: Coordinated PSO Signal Controller]
     F --> G[Unified Web Interface & HUD Rendering]
 ```
 
@@ -37,6 +40,11 @@ graph TD
     * Programmed a prediction confidence metric using the weighted $R^2$ coefficient of determination.
     * Developed the glassmorphic **Traffic Forecasting & Predictions** dashboard card in `index.html` with real-time UI updates, color-coded trend badges, and confidence progress bars.
     * Built an automatic **Dynamic Layout Adaptation** system that checks the active ROIs in `config.yaml` to hide/show Lane 2 cards, metrics, alerts, and lights automatically.
+  * **Week 4 Extension — Dynamic Traffic Graph & Graph Intelligence Module**:
+    * Programmed a **NetworkX**-based `DynamicTrafficGraph` that continuously ingests live traffic density, queue lengths, speeds, and signal phases per intersection to dynamically build a connected graph representation of the traffic network.
+    * Engineered a PyTorch Geometric **Graph Convolutional Network (GCN)** (`TrafficGCN`) that consumes the real-time graph state to model network-wide congestion propagation and anticipate gridlock bottlenecks.
+    * Developed an online-learning `GraphIntelligenceModule` that performs forward passes predicting congestion 1–3 steps ahead for all nodes simultaneously, outputting network predictions and critical node importance scores.
+    * Embedded a real-time Network Graph visualizer inside the frontend Glassmorphic dashboard alongside a new **Graph Analytics & Criticality** panel that explicitly outputs the GCN predictions and node importance metrics.
 * **Key Packages Used**:
   * `ultralytics`: Used to instantiate and run YOLOv8 object detection models.
   * `opencv-python` (cv2): Used to capture video, resize frames, crop regions, and draw anti-aliased HUD elements.
@@ -57,16 +65,39 @@ graph TD
 
 ---
 
-### 🔹 Member 3: Density Estimation & Congestion Alerts
-* **Files**: [density.py](file:///c:/Users/VICTUS/TEST/density.py), [alerts.py](file:///c:/Users/VICTUS/TEST/alerts.py)
+### 🔹 Member 3: Density Estimation, Congestion Alerts, Multi-Intersection Coordination, Federated Learning & Digital Twin Simulation
+* **Files**: [density.py](file:///c:/Users/VICTUS/TEST/density.py), [alerts.py](file:///c:/Users/VICTUS/TEST/alerts.py), [intersection_sim.py](file:///c:/Users/VICTUS/TEST/intersection_sim.py), [test_intersection_sim.py](file:///c:/Users/VICTUS/TEST/test_intersection_sim.py), [federated_learning.py](file:///c:/Users/VICTUS/TEST/federated_learning.py), [test_federated_learning.py](file:///c:/Users/VICTUS/TEST/test_federated_learning.py), [digital_twin.py](file:///c:/Users/VICTUS/TEST/digital_twin.py), [test_digital_twin.py](file:///c:/Users/VICTUS/TEST/test_digital_twin.py)
 * **Responsibilities**:
   * Created a normalized traffic density estimator (`[0.0 - 1.0]`) mapping vehicle counts relative to lane saturation levels.
   * Classified lane congestion levels into `LOW`, `MED`, and `HIGH` bands dynamically.
   * Implemented event-driven safety alarms showing a flashing congestion alert warning banner at the top of the HUD and UI when a lane exceeds thresholds.
   * Developed a dual-lane logging module to write timestamps, vehicle counts, and congestion levels into a persistent CSV database.
+  * **Week 3 Extension — Multi-Intersection Coordination**:
+    * Designed an `IntersectionGrid` class simulating **3–4 connected intersections**, each modelled as an independent `Intersection` node with its own vehicle count, density band, and history.
+    * Implemented **congestion propagation**: a `HIGH`-band intersection spills a configurable fraction (`PROPAGATION_RATE`) of its vehicle load onto its neighbouring nodes each tick, modelling how gridlock at one junction spreads to adjacent junctions.
+    * Built a **coordinated green-wave allocator** that ranks intersections by descending congestion load each tick and assigns green-light durations (bounded by `MIN_GREEN`/`MAX_GREEN`) with a priority head-start bonus for the most congested nodes first.
+    * Integrated Member 1's `predict()` forecasting function per intersection — each node writes its own `lane1_count`-formatted CSV log so the existing prediction module can be called without any modification, with a local trend-based fallback when insufficient history exists.
+    * Designed the integration point for Member 2's RL agent (`RLAgent.step(state)`), allowing the green-wave allocator to apply a learned adjustment on top of the swarm-priority base allocation.
+    * Wrote a 29-test `pytest` suite (`test_intersection_sim.py`) covering grid initialization, propagation accuracy, green-wave ordering, forecast integration (including a real end-to-end call into `prediction.py`), and CSV logging — all passing against the live Week 2/3 codebase.
+  * **Week 4 Extension — Federated Learning Prototype** (`federated_learning.py`):
+    * Implemented a `LocalClient` per intersection that trains a local linear model on its own vehicle-count history — raw traffic data never leaves the intersection, only fitted parameters (`coef`, `intercept`) are shared.
+    * Built a `FederatedServer` performing **sample-weighted FedAvg** aggregation, with round-by-round convergence detection (`has_converged()`).
+    * Exposed `simulate_federated_learning()`, an end-to-end driver reporting **local accuracy** (per-node R²), **global accuracy per round**, **communication overhead** (exact bytes transmitted), and **convergence speed** (round at which global weights stabilize) — the four metrics required for evaluation.
+    * Wrote a 28-test `pytest` suite (`test_federated_learning.py`) covering client training/fallback behaviour, FedAvg aggregation correctness, convergence detection, communication-cost scaling, and full end-to-end simulation runs.
+  * **Week 4 Extension — Digital Twin Network Simulation** (`digital_twin.py`):
+    * Built a `DigitalTwin` class that clones a live `IntersectionGrid` into an isolated "mirror" grid (`sync()`), so every what-if experiment runs without ever touching real traffic state.
+    * Implemented `simulate_future()` to roll the twin forward via `IntersectionGrid.tick()` and forecast near-term traffic evolution under the network's current strategy.
+    * Implemented three interchangeable signal strategies — `green_wave` (Week 3's RL + priority order), `fixed_baseline`, and `density_only` — plus `run_scenario()` / `compare_strategies()` to evaluate them head-to-head from the same current state, layering a small strategy-proportional bonus discharge on top of `tick()`'s own passive-departure baseline so different strategies produce genuinely different outcomes.
+    * `sync()` explicitly detaches Member 1's `traffic_graph` / `graph_intelligence` objects from the twin's mirror grid, so hypothetical future ticks never retrain the live GCN or overwrite the shared `static/traffic_graph.png` dashboard asset with simulated data.
+    * Implemented `apply_disturbance()` + `predict_recovery_time()` / `run_resilience_scenario()` to inject a traffic surge and measure how many ticks it takes a node to drop out of the `HIGH` congestion band — feeding directly into Member 4's Network Resilience Analysis (Task 7).
+    * Wrote a 25-test `pytest` suite (`test_digital_twin.py`) covering state replication, graph-intelligence detachment safety, future simulation, strategy comparison, and disturbance/recovery scenarios.
 * **Key Packages Used**:
-  * `csv` & `os`: Used to check, create, and append telemetry logging records.
+  * `csv` & `os`: Used to check, create, and append telemetry logging records (per-intersection and grid-summary logs).
   * `datetime`: Used to timestamp logged congestion occurrences.
+  * `pytest`: Used to validate grid behaviour and the real integration with `prediction.predict()`.
+  * `numpy`: Used for local model fitting/evaluation math in the federated learning module.
+  * `scikit-learn` (`LinearRegression`): Used to fit each intersection's local federated model.
+  * `copy`: Used to deep-copy grid topology when syncing the Digital Twin.
 
 ---
 
@@ -96,14 +127,14 @@ The unified FastAPI web application orchestrates the entire pipeline:
 ### 1. Requirements
 Install the dependencies:
 ```bash
-pip install ultralytics opencv-python pyyaml numpy scipy fastapi uvicorn jinja2 pytest
+pip install ultralytics opencv-python pyyaml numpy scipy fastapi uvicorn jinja2 pytest pandas scikit-learn
 ```
 
 ### 2. Standalone Testing
 Verify individual modules using pytest:
 ```bash
 python -m unittest test_detector.py -v
-python -m pytest test_density.py test_traffic_signal.py test_prediction.py -v
+python -m pytest test_density.py test_traffic_signal.py test_prediction.py test_evaluator.py test_intersection_sim.py test_federated_learning.py test_digital_twin.py -v
 ```
 
 ### 3. Launching the Web Server

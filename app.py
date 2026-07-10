@@ -29,10 +29,13 @@ from tracker import VehicleTracker
 # Member 3
 from density import compute_density, classify_density, should_trigger_alert, log_dual_counts_to_csv
 from alerts import draw_lane_rois
+from intersection_sim import IntersectionGrid
 
 # Member 4
 from traffic_signal import CoordinatedSignalController
 from compare import EfficiencyTracker, draw_traffic_light_hud
+from evaluator import generate_comparison_charts
+from config import CYCLE_LOG_PATH as _CYCLE_LOG_PATH
 
 # Member 1 Traffic Prediction Extension
 from prediction import predict
@@ -57,6 +60,7 @@ detector = TrafficDetector(config_path="config.yaml")
 vehicle_tracker = VehicleTracker(queue_speed_threshold=queue_speed_threshold)
 signal_ctrl = CoordinatedSignalController(config_path="config.yaml")
 efficiency = EfficiencyTracker()
+grid = IntersectionGrid(n=4)
 
 # ── Shared metrics state (updated by generate_frames, read by /api/metrics) ──
 global_metrics = {
@@ -112,6 +116,12 @@ global_metrics = {
     "l2_pred_queue": 0,
     "l2_pred_trend": "STABLE",
     "l2_pred_confidence": 1.0,
+    
+    # Member 3 Grid Telemetry
+    "grid_tick": 0,
+    "grid_priority": [],
+    "grid_bands": {},
+    "grid_green_times": {},
 }
 
 
@@ -149,8 +159,9 @@ def generate_frames():
             last_frame_time = current_time
 
             # 1. Run Tracker
-            bboxes = [d["bbox"] for d in detections if d["class_name"] != "Pedestrian"]
-            tracks = vehicle_tracker.update(bboxes)
+            # Tracker requires [x1, y1, x2, y2, conf] and the raw frame for DeepSORT
+            bboxes = [d["bbox"] + [d["confidence"]] for d in detections if d["class_name"] != "Pedestrian"]
+            tracks = vehicle_tracker.update(bboxes, frame)
 
             # Calculate Global Classification Counts
             cars = sum(1 for d in detections if d["class_name"] == "Car")
@@ -214,6 +225,18 @@ def generate_frames():
             # Log to CSV
             log_dual_counts_to_csv(frame_num, l1_count, l1_band, l2_count, l2_band)
 
+            # Member 3 Grid Tick
+            if frame_num % 15 == 0 or frame_num == 1:
+                grid_res = grid.tick({0: l1_count})
+                global_metrics.update({
+                    "grid_tick": grid_res["tick"],
+                    "grid_priority": grid_res["priority_order"],
+                    "grid_bands": grid_res["bands"],
+                    "grid_green_times": grid_res["green_times"],
+                    "graph_predictions": grid_res.get("graph_predictions", {}),
+                    "node_importance": grid_res.get("node_importance", [])
+                })
+
             # Member 1 Traffic Forecast Update
             if frame_num % 30 == 0 or frame_num == 1:
                 try:
@@ -249,6 +272,10 @@ def generate_frames():
                     adaptive_duration=signal_ctrl.last_pso_results["best_duration"],
                     vehicle_count=l1_queue + l2_queue
                 )
+                try:
+                    generate_comparison_charts(_CYCLE_LOG_PATH, "static/comparison_chart.png")
+                except Exception as e:
+                    print(f"[Evaluator] Failed to generate charts: {e}")
 
             # 5. Overlays
             # Draw lane boundaries (ROIs)
