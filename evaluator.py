@@ -78,8 +78,8 @@ def generate_comparison_charts(cycle_log_path):
         plt.tight_layout()
         
         # Save the visualization as an image
-        plt.savefig("comparison_chart.png")
-        print("Success: charts saved as 'comparison_chart.png'")
+        #plt.savefig("comparison_chart.png")
+        #print("Success: charts saved as 'comparison_chart.png'")
         plt.close()
 
     except FileNotFoundError:

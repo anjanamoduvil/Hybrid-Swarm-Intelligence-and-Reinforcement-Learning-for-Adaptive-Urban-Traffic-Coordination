@@ -344,6 +344,14 @@ def get_metrics():
     global_metrics["video_path"] = detector.video_path
     return JSONResponse(content=global_metrics)
 
+@app.get("/api/live-chart")
+def get_live_chart_data():
+    """Returns real-time data for the frontend Chart.js graph."""
+    return JSONResponse(content={
+        "tick": global_metrics["frame_num"],
+        "lane1_queue": global_metrics["l1_queue_len"],
+        "lane2_queue": global_metrics["l2_queue_len"]
+    })
 
 if __name__ == "__main__":
     import uvicorn

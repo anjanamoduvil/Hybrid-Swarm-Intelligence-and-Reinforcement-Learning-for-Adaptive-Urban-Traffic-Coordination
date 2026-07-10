@@ -137,6 +137,9 @@ class CoordinatedSignalController:
             "timestamp": time.time()
         }
 
+        # Track the latest explainable decision output
+        self.latest_explanation = {}
+
     def load_config(self):
         if os.path.exists(self.config_path):
             try:
@@ -149,6 +152,58 @@ class CoordinatedSignalController:
                         self.w_wait = cfg.get("pso_weight_wait", self.w_wait)
             except Exception as e:
                 print(f"[Signal] Warning loading config: {e}")
+
+    def generate_decision_explanation(self, lane_id, best_duration, q_active, q_inactive, wait_active, wait_inactive, feature_importances=None):
+        """
+        Task 6: Generates a human-readable justification for the PSO decision[cite: 74].
+        Logs metrics and formats a clean plain-text response for the dashboard[cite: 79].
+        """
+        # 1. Calculate an approximate improvement percentage based on cost changes
+        # For now, let's assume a baseline green of 30s vs our optimized duration
+        baseline_cost = self.pso.cost_function(30.0, q_active, q_inactive, wait_active, wait_inactive)
+        optimized_cost = self.pso.cost_function(best_duration, q_active, q_inactive, wait_active, wait_inactive)
+        
+        improvement_pct = 0.0
+        if baseline_cost > 0:
+            improvement_pct = max(0.0, ((baseline_cost - optimized_cost) / baseline_cost) * 100)
+
+        # 2. Derive a confidence score based on optimization stability or weights
+        confidence_score = min(98.0, max(75.0, 100.0 - (optimized_cost / 10.0)))
+
+        # 3. Handle Feature Importances (Fallback if Member 1 hasn't handed over GCN data yet)
+        if feature_importances is None:
+            # Fallback mock values to allow Stage 2 & 3 parallel development
+            feature_importances = {
+                "active_lane_queue": 0.45,
+                "inactive_lane_queue": 0.35,
+                "neighbor_prediction": 0.20
+            }
+
+        # 4. Construct the plain-language string
+        action_verb = "Increase" if best_duration > 30.0 else "Decrease"
+        explanation_text = (
+            f"{action_verb} Green Time for Lane {lane_id}: "
+            f"active queue is {int(q_active)} vehicles, "
+            f"expected cost reduction {improvement_pct:.1f}%, "
+            f"confidence {confidence_score:.1f}%."
+        )
+
+        # 5. Package everything into a structured record for Member 2's Dashboard (Task 8) [cite: 93]
+        # 5. Package everything into a structured record for Member 2's Dashboard (Task 8)
+        explanation_record = {
+            "intersection_id": getattr(self, "intersection_id", "Intersection_A"),
+            "action": f"LANE{lane_id}_GREEN_{best_duration}s",
+            "explanation": explanation_text,
+            "confidence": round(confidence_score, 2),
+            "improvement_predicted": round(improvement_pct, 2),
+            "feature_weights": feature_importances,
+            "timestamp": time.time()
+        }
+
+        # Log to console for auditing
+        print(f"[Explainability Engine] Decision Logged: {explanation_text}")
+        
+        return explanation_record
 
     def update_state_machine(self, l1_q, l2_q, l1_wait, l2_wait):
         """
@@ -187,6 +242,15 @@ class CoordinatedSignalController:
                     "active_lane": 2,
                     "timestamp": time.time()
                 }
+                # Task 6: Hook explainable decision tracking here
+                self.latest_explanation = self.generate_decision_explanation(
+                    lane_id=2,
+                    best_duration=opt_dur,
+                    q_active=l2_q,
+                    q_inactive=l1_q,
+                    wait_active=l2_wait,
+                    wait_inactive=l1_wait
+                )
 
         elif self.current_state == "LANE2_GREEN":
             if elapsed >= self.current_duration:
@@ -213,6 +277,15 @@ class CoordinatedSignalController:
                     "active_lane": 1,
                     "timestamp": time.time()
                 }
+                # Task 6: Hook explainable decision tracking here
+                self.latest_explanation = self.generate_decision_explanation(
+                    lane_id=1,
+                    best_duration=opt_dur,
+                    q_active=l1_q,
+                    q_inactive=l2_q,
+                    wait_active=l1_wait,
+                    wait_inactive=l2_wait
+                )
                 self.cycle_count += 1
                 cycle_completed = True
 

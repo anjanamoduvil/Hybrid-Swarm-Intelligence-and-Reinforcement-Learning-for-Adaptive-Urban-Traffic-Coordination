@@ -162,3 +162,8 @@ cython_debug/
 # Local configuration overrides
 test_config.yaml
 test_synthetic.mp4
+
+__pycache__/
+*.pyc
+# If you want to keep your analytics curve local instead of clogging the repo:
+# resilience_analysis_curve.png

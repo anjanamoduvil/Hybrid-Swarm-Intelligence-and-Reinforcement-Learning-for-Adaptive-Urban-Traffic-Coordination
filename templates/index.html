@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swarm Adaptive Traffic coordination Dashboard</title>
-    <!-- Premium Google Fonts -->
+    <title>Swarm Adaptive Traffic Coordination Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -414,11 +413,11 @@
             margin-top: 4px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
 <div class="dashboard-container">
-    <!-- Top HUD Header -->
     <header>
         <div class="logo-section">
             <h1>Traffic Ingestion Terminal</h1>
@@ -430,7 +429,6 @@
         </div>
     </header>
 
-    <!-- Congestion Alert Banners -->
     <div class="alert-container">
         <div class="alert-banner" id="alert-l1">
             <span>⚠</span>
@@ -442,11 +440,8 @@
         </div>
     </div>
 
-    <!-- Main Grid -->
     <div class="workspace-grid">
-        <!-- Left: Video Ingestion & Intersection Map -->
         <div class="feed-column">
-            <!-- Camera Feed -->
             <div class="video-feed-widget">
                 <div class="widget-title">
                     <span>YOLOv8 & SORT Active Tracking Stream</span>
@@ -457,14 +452,12 @@
                 </div>
             </div>
 
-            <!-- Intersection Coordinated Traffic Light Map -->
             <div class="intersection-map-widget">
                 <div class="widget-title">
                     <span>Coordinated Intersection Signal Map</span>
                     <span id="active-phase-timer" style="font-family: var(--font-mono); color: #fff; background: #1e293b; padding: 2px 8px; border-radius: 4px; font-size: 0.82rem;">Phase Timer: --</span>
                 </div>
                 <div class="intersection-map">
-                    <!-- Lane 1 Light Block -->
                     <div class="lane-light-box" id="light-box-l1">
                         <h3 style="color: #60a5fa;">Lane 1 (Main)</h3>
                         <div class="traffic-light-bulb" id="bulb-l1-red"></div>
@@ -472,12 +465,10 @@
                         <div class="traffic-light-bulb" id="bulb-l1-green"></div>
                     </div>
                     
-                    <!-- Coordinated Cross Symbol -->
                     <div id="cross-symbol" style="font-size: 2rem; color: var(--text-muted); opacity: 0.3;">
                         ✛
                     </div>
 
-                    <!-- Lane 2 Light Block -->
                     <div class="lane-light-box" id="light-box-l2">
                         <h3 style="color: #f472b6;">Lane 2 (Cross)</h3>
                         <div class="traffic-light-bulb" id="bulb-l2-red"></div>
@@ -488,9 +479,7 @@
             </div>
         </div>
 
-        <!-- Right: Swarm Engine & Lane Telemetries -->
         <div class="dashboard-column">
-            <!-- Swarm Optimization Engine Panel -->
             <div class="panel-card swarm-panel">
                 <div class="widget-title" style="border-left-color: #10b981;">
                     <span style="color: #10b981;">Swarm Optimizer Engine (PSO)</span>
@@ -516,21 +505,17 @@
                     </div>
                 </div>
 
-                <!-- Cost History SVF Plot (PSO Convergence Curve) -->
                 <div class="swarm-chart-container">
                     <div class="swarm-chart-title">PSO Swarm Cost Convergence (history)</div>
                     <svg viewBox="0 0 200 50" width="100%" height="60px" style="overflow: visible;">
-                        <!-- Background Grid Lines -->
                         <line x1="0" y1="0" x2="200" y2="0" stroke="rgba(255,255,255,0.05)" stroke-width="1"></line>
                         <line x1="0" y1="25" x2="200" y2="25" stroke="rgba(255,255,255,0.05)" stroke-width="1"></line>
                         <line x1="0" y1="50" x2="200" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1"></line>
-                        <!-- Sparkline Polyline -->
                         <polyline id="pso-chart-line" fill="none" stroke="#10b981" stroke-width="2" points="0,50 200,50"></polyline>
                     </svg>
                 </div>
             </div>
 
-            <!-- Global Vehicle Classification Tally -->
             <div class="panel-card" style="border-left: 4px solid var(--accent-primary);">
                 <div class="widget-title" style="border-left-color: var(--accent-primary);">
                     <span style="color: var(--accent-primary);">Global Intersection Tally</span>
@@ -560,14 +545,23 @@
                 </div>
             </div>
 
-            <!-- Traffic Forecasting & Predictions Panel -->
+            <div class="panel-card" style="border-left: 4px solid #3b82f6;">
+                <div class="widget-title" style="border-left-color: #3b82f6;">
+                    <span style="color: #3b82f6;">Live Comparative Queue Lengths</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">Real-Time</span>
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <div style="position: relative; height: 220px; width: 100%; margin-top: 1rem;">
+                    <canvas id="liveTrafficChart"></canvas>
+                </div>
+            </div>
+
             <div class="panel-card" style="border-left: 4px solid #f59e0b; background: var(--panel-bg); margin-bottom: 0.5rem;">
                 <div class="widget-title" style="border-left-color: #f59e0b;">
                     <span style="color: #f59e0b;">Traffic Forecasting & Predictions</span>
                     <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(245, 158, 11, 0.1); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">Regression & MA Model</span>
                 </div>
                 <div id="forecast-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
-                    <!-- Lane 1 Predictions -->
                     <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 8px; padding: 12px; position: relative;">
                         <h4 style="font-size: 0.85rem; color: #60a5fa; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">Lane 1 Forecast</h4>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -595,7 +589,6 @@
                         </div>
                     </div>
 
-                    <!-- Lane 2 Predictions -->
                     <div id="l2-forecast-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 8px; padding: 12px; position: relative;">
                         <h4 style="font-size: 0.85rem; color: #f472b6; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">Lane 2 Forecast</h4>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -625,9 +618,7 @@
                 </div>
             </div>
 
-            <!-- Dual-Lane Details Stack -->
             <div class="lanes-container">
-                <!-- Lane 1 Main -->
                 <div class="lane-card l1">
                     <div class="lane-title">Lane 1 (Main Street)</div>
                     <div class="metric-row">
@@ -652,7 +643,6 @@
                     </div>
                 </div>
 
-                <!-- Lane 2 Cross -->
                 <div class="lane-card l2">
                     <div class="lane-title">Lane 2 (Cross Street)</div>
                     <div class="metric-row">
@@ -678,7 +668,6 @@
                 </div>
             </div>
 
-            <!-- General Efficiency telemetries -->
             <div class="system-stats">
                 <div class="sys-card">
                     <div class="sys-val" id="sys-saved">--</div>
@@ -693,8 +682,62 @@
     </div>
 </div>
 
-<!-- Real-time Dashboard Sync Script -->
 <script>
+    // ── INITIALIZE CHART.JS FOR QUEUE LOGGING ───────────────────────────────
+    const ctx = document.getElementById('liveTrafficChart').getContext('2d');
+    const liveQueueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [], // Stores current simulation frame steps
+            datasets: [
+                {
+                    label: 'Lane 1 Queue',
+                    data: [],
+                    borderColor: '#3b82f6', // Cobalt Blue
+                    backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Lane 2 Queue',
+                    data: [],
+                    borderColor: '#d946ef', // Fuchsia Magenta
+                    backgroundColor: 'rgba(217, 70, 239, 0.05)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#f3f4f6', font: { family: 'Outfit' } }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                    ticks: { color: '#9ca3af', font: { family: 'JetBrains Mono', size: 10 } },
+                    title: { display: true, text: 'Simulation Time (Frames)', color: '#9ca3af' }
+                },
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                    ticks: { color: '#9ca3af', font: { family: 'JetBrains Mono', size: 10 } },
+                    title: { display: true, text: 'Vehicles', color: '#9ca3af' },
+                    min: 0,
+                    suggestedMax: 10
+                }
+            }
+        }
+    });
+
+    // ── PRE-EXISTING ORIGINAL LOGIC ARCHITECTURE ────────────────────────────
     function drawPSOChart(history) {
         if (!history || history.length === 0) return;
         const svgLine = document.getElementById('pso-chart-line');
@@ -702,11 +745,10 @@
         const minVal = Math.min(...history);
         const range = maxVal - minVal || 1.0;
         const width = 200;
-        const height = 45; // stay slightly inside bounds
+        const height = 45; 
 
         const points = history.map((val, idx) => {
             const x = (idx / (history.length - 1)) * width;
-            // invert y because svg y grows downwards
             const y = height - ((val - minVal) / range) * height + 2.5; 
             return `${x.toFixed(1)},${y.toFixed(1)}`;
         }).join(' ');
@@ -715,7 +757,6 @@
     }
 
     function updateTrafficLights(state) {
-        // Reset all bulbs to dark grey
         const bulbs = [
             'bulb-l1-red', 'bulb-l1-yellow', 'bulb-l1-green',
             'bulb-l2-red', 'bulb-l2-yellow', 'bulb-l2-green'
@@ -724,12 +765,6 @@
             const el = document.getElementById(b);
             el.className = 'traffic-light-bulb';
         });
-
-        // Set states coordinately
-        // LANE1_GREEN -> L1 Green, L2 Red
-        // LANE1_YELLOW -> L1 Yellow, L2 Red
-        // LANE2_GREEN -> L1 Red, L2 Green
-        // LANE2_YELLOW -> L1 Red, L2 Yellow
         if (state === 'LANE1_GREEN') {
             document.getElementById('bulb-l1-green').classList.add('green');
             document.getElementById('bulb-l2-red').classList.add('red');
@@ -745,160 +780,143 @@
         }
     }
 
-    async function fetchMetrics() {
-        try {
-            const res = await fetch('/api/metrics');
-            if (res.ok) {
-                const data = await res.json();
-
-                // Dynamic Layout Adaptation (1-Lane vs 2-Lane)
-                if (data.num_lanes === 1) {
-                    // Hide Lane 2 traffic light, cross symbol, and alert banner
-                    document.getElementById('light-box-l2').style.display = 'none';
-                    if (document.getElementById('cross-symbol')) {
-                        document.getElementById('cross-symbol').style.display = 'none';
-                    }
-                    document.getElementById('alert-l2').style.display = 'none';
-                    
-                    // Modify forecast card columns to single-column layout
-                    const forecastContainer = document.getElementById('forecast-container');
-                    if (forecastContainer) {
-                        forecastContainer.style.gridTemplateColumns = '1fr';
-                    }
-                    const l2ForecastCard = document.getElementById('l2-forecast-card');
-                    if (l2ForecastCard) {
-                        l2ForecastCard.style.display = 'none';
-                    }
-
-                    // Modify lanes stack columns to single-column layout
-                    const lanesContainer = document.querySelector('.lanes-container');
-                    if (lanesContainer) {
-                        lanesContainer.style.gridTemplateColumns = '1fr';
-                    }
-                    const l2Card = document.querySelector('.lane-card.l2');
-                    if (l2Card) {
-                        l2Card.style.display = 'none';
-                    }
-                } else {
-                    // Show Lane 2 traffic light, cross symbol
-                    document.getElementById('light-box-l2').style.display = 'flex';
-                    if (document.getElementById('cross-symbol')) {
-                        document.getElementById('cross-symbol').style.display = 'block';
-                    }
-                    
-                    // Modify forecast card columns to dual-column layout
-                    const forecastContainer = document.getElementById('forecast-container');
-                    if (forecastContainer) {
-                        forecastContainer.style.gridTemplateColumns = '1fr 1fr';
-                    }
-                    const l2ForecastCard = document.getElementById('l2-forecast-card');
-                    if (l2ForecastCard) {
-                        l2ForecastCard.style.display = 'block';
-                    }
-
-                    // Modify lanes stack columns to dual-column layout
-                    const lanesContainer = document.querySelector('.lanes-container');
-                    if (lanesContainer) {
-                        lanesContainer.style.gridTemplateColumns = '1fr 1fr';
-                    }
-                    const l2Card = document.querySelector('.lane-card.l2');
-                    if (l2Card) {
-                        l2Card.style.display = 'flex';
-                    }
-                }
-
-                // Frame Index
-                document.getElementById('frame-counter').innerText = `Active Frame: ${data.frame_num}`;
-
-                // Global Classification Tally
-                document.getElementById('val-total').innerText = data.total_vehicles;
-                document.getElementById('val-cars').innerText = data.cars;
-                document.getElementById('val-trucks').innerText = data.trucks_buses;
-                document.getElementById('val-bikes').innerText = data.bikes;
-                document.getElementById('val-peds').innerText = data.pedestrians;
-
-                // Lane 1 Telemetry
-                document.getElementById('l1-count').innerText = data.l1_count;
-                document.getElementById('l1-avg').innerText = data.l1_avg_count;
-                document.getElementById('l1-queue').innerText = data.l1_queue_len;
-                document.getElementById('l1-wait').innerText = `${data.l1_wait_time}s`;
-                
-                const l1BandEl = document.getElementById('l1-band');
-                l1BandEl.innerText = data.l1_density_band;
-                l1BandEl.className = 'congestion-badge';
-                if (data.l1_density_band === 'LOW') l1BandEl.classList.add('band-low');
-                if (data.l1_density_band === 'MED') l1BandEl.classList.add('band-med');
-                if (data.l1_density_band === 'HIGH') l1BandEl.classList.add('band-high');
-
-                // Lane 2 Telemetry
-                document.getElementById('l2-count').innerText = data.l2_count;
-                document.getElementById('l2-avg').innerText = data.l2_avg_count;
-                document.getElementById('l2-queue').innerText = data.l2_queue_len;
-                document.getElementById('l2-wait').innerText = `${data.l2_wait_time}s`;
-
-                const l2BandEl = document.getElementById('l2-band');
-                l2BandEl.innerText = data.l2_density_band;
-                l2BandEl.className = 'congestion-badge';
-                if (data.l2_density_band === 'LOW') l2BandEl.classList.add('band-low');
-                if (data.l2_density_band === 'MED') l2BandEl.classList.add('band-med');
-                if (data.l2_density_band === 'HIGH') l2BandEl.classList.add('band-high');
-
-                // Congestion Alert Banners
-                const alertL1 = document.getElementById('alert-l1');
-                const alertL2 = document.getElementById('alert-l2');
-                if (data.l1_alert_active) alertL1.classList.add('active');
-                else alertL1.classList.remove('active');
-                if (data.l2_alert_active) alertL2.classList.add('active');
-                else alertL2.classList.remove('active');
-
-                // Traffic Light FSM Sync
-                updateTrafficLights(data.signal_state);
-                document.getElementById('active-phase-timer').innerText = `Phase Timer: ${data.signal_time_left}s`;
-
-                // Swarm Solver (PSO) Sync
-                document.getElementById('pso-target-lane').innerText = `Lane ${data.pso_active_lane}`;
-                document.getElementById('pso-best-dur').innerText = `${data.pso_best_duration}s`;
-                document.getElementById('pso-best-cost').innerText = data.pso_cost.toFixed(1);
-                
-                // Redraw PSO Convergence Sparkline
-                drawPSOChart(data.pso_cost_history);
-
-                // Traffic Forecast Sync (Member 1)
-                document.getElementById('l1-pred-congestion').innerText = data.l1_pred_congestion.toFixed(2);
-                document.getElementById('l1-pred-queue').innerText = data.l1_pred_queue;
-                const l1TrendEl = document.getElementById('l1-pred-trend');
-                l1TrendEl.innerText = data.l1_pred_trend;
-                l1TrendEl.className = 'congestion-badge';
-                if (data.l1_pred_trend === 'RISING') l1TrendEl.classList.add('band-high');
-                else if (data.l1_pred_trend === 'FALLING') l1TrendEl.classList.add('band-low');
-                else l1TrendEl.classList.add('band-med');
-                document.getElementById('l1-pred-confidence').innerText = `${Math.round(data.l1_pred_confidence * 100)}%`;
-                document.getElementById('l1-pred-conf-bar').style.width = `${data.l1_pred_confidence * 100}%`;
-
-                document.getElementById('l2-pred-congestion').innerText = data.l2_pred_congestion.toFixed(2);
-                document.getElementById('l2-pred-queue').innerText = data.l2_pred_queue;
-                const l2TrendEl = document.getElementById('l2-pred-trend');
-                l2TrendEl.innerText = data.l2_pred_trend;
-                l2TrendEl.className = 'congestion-badge';
-                if (data.l2_pred_trend === 'RISING') l2TrendEl.classList.add('band-high');
-                else if (data.l2_pred_trend === 'FALLING') l2TrendEl.classList.add('band-low');
-                else l2TrendEl.classList.add('band-med');
-                document.getElementById('l2-pred-confidence').innerText = `${Math.round(data.l2_pred_confidence * 100)}%`;
-                document.getElementById('l2-pred-conf-bar').style.width = `${data.l2_pred_confidence * 100}%`;
-
-                // System Performance
-                document.getElementById('sys-saved').innerText = `${data.saved_time_total}s`;
-                // Mock or calculate real pipeline FPS (average around 30)
-                document.getElementById('sys-fps').innerText = data.fps > 0 ? data.fps.toFixed(1) : "30.0";
-            }
-        } catch (e) {
-            console.error("Telemetry sync error:", e);
+    function applyCongestionStyles(elementId, alertId, band) {
+        const el = document.getElementById(elementId);
+        const alertEl = document.getElementById(alertId);
+        el.className = 'congestion-badge';
+        
+        if (band === 'HIGH') {
+            el.classList.add('band-high');
+            el.textContent = 'HIGH';
+            alertEl.classList.add('active');
+        } else if (band === 'MED' || band === 'MEDIUM') {
+            el.classList.add('band-med');
+            el.textContent = 'MED';
+            alertEl.classList.remove('active');
+        } else {
+            el.classList.add('band-low');
+            el.textContent = 'LOW';
+            alertEl.classList.remove('active');
         }
     }
 
-    // High frequency metrics polling (every 300ms)
-    setInterval(fetchMetrics, 300);
-    fetchMetrics();
+    function renderTelemetry(data) {
+        // Core System Indicators
+        document.getElementById('frame-counter').textContent = `FRAME SEC: ${data.frame_id || 0}`;
+        document.getElementById('sys-fps').textContent = (data.fps || 0).toFixed(1);
+        document.getElementById('sys-saved').textContent = `${data.saved_time_seconds || 0}s`;
+
+        // Classification Tallies
+        document.getElementById('val-total').textContent = data.total_vehicles || 0;
+        document.getElementById('val-cars').textContent = data.classifications?.cars || 0;
+        document.getElementById('val-trucks').textContent = data.classifications?.trucks_buses || 0;
+        document.getElementById('val-bikes').textContent = data.classifications?.bikes || 0;
+        document.getElementById('val-peds').textContent = data.classifications?.pedestrians || 0;
+
+        // Lane 1 Telemetry Metrics
+        document.getElementById('l1-count').textContent = data.lane1?.current_count || 0;
+        document.getElementById('l1-queue').textContent = data.lane1?.queue_length || 0;
+        document.getElementById('l1-wait').textContent = `${data.lane1?.avg_wait_time || 0}s`;
+        document.getElementById('l1-avg').textContent = (data.lane1?.running_avg || 0).toFixed(1);
+        applyCongestionStyles('l1-band', 'alert-l1', data.lane1?.congestion_band);
+
+        // Lane 2 Telemetry Metrics
+        document.getElementById('l2-count').textContent = data.lane2?.current_count || 0;
+        document.getElementById('l2-queue').textContent = data.lane2?.queue_length || 0;
+        document.getElementById('l2-wait').textContent = `${data.lane2?.avg_wait_time || 0}s`;
+        document.getElementById('l2-avg').textContent = (data.lane2?.running_avg || 0).toFixed(1);
+        applyCongestionStyles('l2-band', 'alert-l2', data.lane2?.congestion_band);
+
+        // Swarm Engine Optimization Attributes
+        document.getElementById('pso-target-lane').textContent = data.pso?.target_lane || 'N/A';
+        document.getElementById('pso-best-dur').textContent = `${data.pso?.allocated_green_time || 0}s`;
+        document.getElementById('pso-best-cost').textContent = (data.pso?.optimizer_fitness_cost || 0).toFixed(4);
+        document.getElementById('active-phase-timer').textContent = `Phase Timer: ${data.pso?.phase_timer_remaining || 0}s`;
+        
+        if (data.pso?.cost_history) {
+            drawPSOChart(data.pso.cost_history);
+        }
+
+        // Regression Models & Traffic Forecasting
+        if (data.forecasting) {
+            document.getElementById('l1-pred-congestion').textContent = data.forecasting.lane1?.predicted_congestion || '--';
+            document.getElementById('l1-pred-queue').textContent = data.forecasting.lane1?.predicted_queue || '--';
+            document.getElementById('l1-pred-confidence').textContent = `${data.forecasting.lane1?.confidence || 0}%`;
+            document.getElementById('l1-pred-conf-bar').style.width = `${data.forecasting.lane1?.confidence || 0}%`;
+            
+            const trend1 = document.getElementById('l1-pred-trend');
+            trend1.textContent = data.forecasting.lane1?.trend || '--';
+            trend1.className = 'congestion-badge ' + (data.forecasting.lane1?.trend === 'RISING' ? 'band-high' : 'band-low');
+
+            document.getElementById('l2-pred-congestion').textContent = data.forecasting.lane2?.predicted_congestion || '--';
+            document.getElementById('l2-pred-queue').textContent = data.forecasting.lane2?.predicted_queue || '--';
+            document.getElementById('l2-pred-confidence').textContent = `${data.forecasting.lane2?.confidence || 0}%`;
+            document.getElementById('l2-pred-conf-bar').style.width = `${data.forecasting.lane2?.confidence || 0}%`;
+            
+            const trend2 = document.getElementById('l2-pred-trend');
+            trend2.textContent = data.forecasting.lane2?.trend || '--';
+            trend2.className = 'congestion-badge ' + (data.forecasting.lane2?.trend === 'RISING' ? 'band-high' : 'band-low');
+        }
+
+        // Active State Transitions
+        updateTrafficLights(data.pso?.active_state);
+
+        // Chart.js Timeline Updates
+        if (data.frame_id !== undefined) {
+            liveQueueChart.data.labels.push(data.frame_id);
+            liveQueueChart.data.datasets[0].data.push(data.lane1?.queue_length || 0);
+            liveQueueChart.data.datasets[1].data.push(data.lane2?.queue_length || 0);
+
+            // Cap streaming visibility window to the last 40 frames
+            if (liveQueueChart.data.labels.length > 40) {
+                liveQueueChart.data.labels.shift();
+                liveQueueChart.data.datasets[0].data.shift();
+                liveQueueChart.data.datasets[1].data.shift();
+            }
+            liveQueueChart.update('none'); // Update smoothly without reset animations
+        }
+    }
+
+    // ── DATA INGESTION CONNECTORS ──────────────────────────────────────────
+    function initializeIngestionStream() {
+        if (!!window.EventSource) {
+            const source = new EventSource('/stream_telemetry');
+
+            source.onmessage = function(event) {
+                try {
+                    const parsedData = JSON.parse(event.data);
+                    renderTelemetry(parsedData);
+                } catch (err) {
+                    console.error("Inbound telemetry parse failure:", err);
+                }
+            };
+
+            source.onerror = function(err) {
+                console.warn("SSE Ingestion Stream disconnected. Dropping back to interval engine...");
+                source.close();
+                initializePollingFallback();
+            };
+        } else {
+            initializePollingFallback();
+        }
+    }
+
+    function initializePollingFallback() {
+        setInterval(async () => {
+            try {
+                const response = await fetch('/telemetry');
+                if (response.ok) {
+                    const parsedData = await response.json();
+                    renderTelemetry(parsedData);
+                }
+            } catch (err) {
+                console.error("Telemetry fetch pipeline error:", err);
+            }
+        }, 1000); // 1Hz fallback ping rate
+    }
+
+    // Trigger Stream Runtime Pipeline
+    window.addEventListener('DOMContentLoaded', initializeIngestionStream);
 </script>
 </body>
 </html>
