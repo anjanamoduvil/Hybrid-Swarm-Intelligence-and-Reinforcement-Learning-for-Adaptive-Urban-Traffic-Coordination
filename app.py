@@ -146,7 +146,28 @@ def generate_frames():
     if detector.model is None:
         detector.load_model()
 
-    # Telemetry accumulators
+# ── STARTUP CLEAN SLATE FIX (Wipe old video data immediately) ──
+    import os
+    for log_file in [_CYCLE_LOG_PATH, _cfg.CSV_LOG_PATH]:
+    if os.path.exists(log_file):
+        try:
+            os.remove(log_file)
+        except Exception as e:
+            print(f"[Startup Clean] Warning: Could not remove old log {log_file}: {e}")
+
+# Remove the stale chart image so the new video starts empty
+    if os.path.exists("static/comparison_chart.png"):
+        try:
+            os.remove("static/comparison_chart.png")
+        except Exception as e:
+            print(f"[Startup Clean] Warning: Could not remove old chart image: {e}")
+
+# Reset efficiency data structures
+    efficiency.history.clear()
+    efficiency.accumulated_saved_time = 0.0
+# ────────────────────────────────────────────────────────────────
+
+# Telemetry accumulators
     l1_count_sum = 0
     l2_count_sum = 0
     track_wait_times = defaultdict(float)
@@ -343,13 +364,32 @@ def generate_frames():
         l1_count_sum = 0
         l2_count_sum = 0
         track_wait_times.clear()
+        
+        # ── REPLAY TRANSITION CLEANUP ──────────────────────────────────────────
+        import os
+        for log_file in [_CYCLE_LOG_PATH, _cfg.CSV_LOG_PATH]:
+            if os.path.exists(log_file):
+                try:
+                    os.remove(log_file)
+                except:
+                    pass
+        if os.path.exists("static/comparison_chart.png"):
+            try:
+                os.remove("static/comparison_chart.png")
+            except:
+                pass
+
+        efficiency.history.clear() 
+        efficiency.accumulated_saved_time = 0.0
+# ──────────────────────────────────────────────────────────────────────
+        # ──────────────────────────────────────────────────────────────────────
+
         print("[Web Server] Video completed, restarting stream loop...")
 
 
 @app.get("/")
 def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
+    return templates.TemplateResponse(request, "index.html")
 
 @app.get("/video_feed")
 def video_feed():

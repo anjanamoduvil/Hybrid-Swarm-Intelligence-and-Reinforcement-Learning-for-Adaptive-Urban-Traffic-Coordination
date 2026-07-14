@@ -720,7 +720,7 @@
                     <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(239, 68, 68, 0.1); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">Matplotlib</span>
                 </div>
                 <div style="width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05); background: #fff; margin-top: 1rem;">
-                    <img id="eval-chart" src="/static/comparison_chart.png" alt="Strategy Comparison" style="width: 100%; height: auto; display: block;">
+                    <img id="perf-chart" src="/static/comparison_chart.png" alt="Strategy Comparison" style="width: 100%; height: auto; display: block;">
                 </div>
             </div>
         </div>
@@ -1163,7 +1163,7 @@
 
     // Cache-bust the comparison chart every 5 seconds
     setInterval(() => {
-        const chartEl = document.getElementById('eval-chart');
+        const chartEl = document.getElementById('perf-chart');
         if (chartEl) {
             chartEl.src = '/static/comparison_chart.png?t=' + Date.now();
         }

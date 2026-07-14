@@ -46,10 +46,10 @@ class EfficiencyTracker:
                 "fixed_duration": FIXED_BASELINE,
                 "time_saved": round(time_saved, 2)
             })
-
+ 
 
 def draw_traffic_light_hud(frame: np.ndarray, state: str, time_left: float, tracker: EfficiencyTracker, last_pso_results: dict = None, l1_metrics: dict = None, l2_metrics: dict = None, latest_explanation: dict = None) -> np.ndarray:
-def draw_traffic_light_hud(frame: np.ndarray, state: str, time_left: float, tracker: EfficiencyTracker, last_pso_results: dict = None, l1_metrics: dict = None, l2_metrics: dict = None, rl_action: str = None) -> np.ndarray:
+ def draw_traffic_light_hud(frame: np.ndarray, state: str, time_left: float, tracker: EfficiencyTracker, last_pso_results: dict = None, l1_metrics: dict = None, l2_metrics: dict = None, rl_action: str = None) -> np.ndarray:
     """
     Renders side-by-side coordinated traffic lights and an updated telemetry/swarm analytics dashboard.
     Now includes a dedicated sub-panel for the Member 4 Live Explainable AI Decision Engine.

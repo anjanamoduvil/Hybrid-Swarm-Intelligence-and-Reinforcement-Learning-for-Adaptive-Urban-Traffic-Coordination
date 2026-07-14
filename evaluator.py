@@ -66,6 +66,10 @@ def generate_comparison_charts(cycle_log_path, output_image_path="comparison_cha
     and generates comparison charts using Matplotlib.
     """
     try:
+        # CRITICAL FIX: Clear any existing plots in memory before creating a new one
+        plt.clf()
+        plt.close('all')
+
         df = _load_transformed_data(cycle_log_path)
         if df.empty:
             print("No data available to plot.")
@@ -78,7 +82,10 @@ def generate_comparison_charts(cycle_log_path, output_image_path="comparison_cha
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
         # 1. Bar Chart: Average Waiting Time per Strategy
-        ax1.bar(strategy_summary["strategy"], strategy_summary["waiting_time"], color=['gray', 'blue', 'green'])
+        # Note: Your colors array length (3) matches Week 3's 3-way layout. 
+        # Since strategy_summary has 2 values here, slice it or keep it safe:
+        colors = ['gray', 'blue', 'green'][:len(strategy_summary)]
+        ax1.bar(strategy_summary["strategy"], strategy_summary["waiting_time"], color=colors)
         ax1.set_title("Average Waiting Time Comparison")
         ax1.set_xlabel("Signal Strategy")
         ax1.set_ylabel("Time (seconds)")
@@ -102,11 +109,9 @@ def generate_comparison_charts(cycle_log_path, output_image_path="comparison_cha
         plt.tight_layout()
         
         # Save the visualization as an image
-        #plt.savefig("comparison_chart.png")
-        #print("Success: charts saved as 'comparison_chart.png'")
         plt.savefig(output_image_path)
         print(f"Success: charts saved as '{output_image_path}'")
-        plt.close()
+        plt.close(fig) # Explicitly close this figure instance
 
     except FileNotFoundError:
         print(f"Error: Cannot generate charts. {cycle_log_path} not found.")

@@ -5,7 +5,7 @@
 model_path: "yolov8s.pt"
 
 # Path to input traffic intersection video.
-video_path: "Junction 1 D1.mp4"
+video_path: "C:\\Users\\Asus\\Desktop\\NIT internship\\Hybrid-Swarm-Intelligence-and-Reinforcement-Learning-for-Adaptive-Urban-Traffic-Coordination\\Junction 1 D1.mp4"
 
 # Minimum confidence threshold for vehicle filtering.
 conf_threshold: 0.20
