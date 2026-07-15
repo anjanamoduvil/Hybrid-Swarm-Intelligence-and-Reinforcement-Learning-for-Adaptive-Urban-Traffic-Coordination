@@ -17,6 +17,9 @@ CSV_LOG_PATH = "density_log.csv"
 N_INTERSECTIONS  = 4
 PROPAGATION_RATE = 0.3
 MULTI_LOG_PATH   = "intersection_grid_log.csv"
+MAX_LANE_CAPACITY = 40  # physical cap on vehicles queued at one intersection;
+                        # bounds congestion propagation so it saturates
+                        # instead of compounding indefinitely between HIGH nodes
 
 # ── Member 1 & 2 (Week 3): Prediction & RL Configuration ─────────────────────
 PREDICTION_WINDOW = 5   # moving-average window for M1
@@ -36,6 +39,9 @@ CYCLE_LOG_PATH = "signal_cycle_log.csv"
 FED_ROUNDS          = 8      # Default number of federated training rounds
 FED_CONVERGENCE_TOL = 1e-3   # Max change in global weights to declare convergence
 FED_MIN_LOCAL_POINTS = 2     # Minimum local history points needed to fit a local model
+FED_PERSONALIZATION_ALPHA = 0.7  # Blend weight for personalized federated learning:
+                                  # personalized = alpha*local + (1-alpha)*global.
+                                  # Fixes poor global-model fit under heterogeneous nodes.
 
 # ── Member 3 (Week 4): Digital Twin Network Simulation ───────────────────────
 TWIN_LOG_PATH        = "digital_twin_log.csv"
