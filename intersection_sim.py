@@ -158,7 +158,9 @@ class IntersectionGrid:
                   received this tick (for logging/inspection).
         """
         rate = _cfg.PROPAGATION_RATE
+        cap = getattr(_cfg, "MAX_LANE_CAPACITY", 40)
         deltas = {i: 0.0 for i in self.nodes}
+        outflows = {i: 0.0 for i in self.nodes}
 
         for node_id, node in self.nodes.items():
             if node.band != "HIGH" or not node.neighbours:
@@ -168,10 +170,18 @@ class IntersectionGrid:
             share = overflow / len(node.neighbours)
             for neighbour_id in node.neighbours:
                 deltas[neighbour_id] += share
+            # FIX: vehicles that spill onto a neighbour must leave the
+            # source node — without this, adjacent HIGH-band nodes fed
+            # each other vehicles every tick with neither ever losing any,
+            # causing an unbounded exponential runaway (see report Discussion).
+            outflows[node_id] += overflow
 
-        for node_id, delta in deltas.items():
-            if delta > 0:
-                self.nodes[node_id].vehicle_count += int(round(delta))
+        for node_id in self.nodes:
+            node = self.nodes[node_id]
+            new_count = node.vehicle_count - outflows[node_id] + deltas[node_id]
+            # FIX: cap at physical lane capacity so propagation saturates
+            # instead of compounding indefinitely.
+            node.vehicle_count = int(round(min(max(new_count, 0), cap)))
 
         return {node_id: round(delta, 2) for node_id, delta in deltas.items()}
 
