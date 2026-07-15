@@ -168,7 +168,8 @@ def communication_cost_bytes(n_clients: int, n_rounds: int) -> int:
     return n_clients * n_rounds * per_round_per_client
 
 
-def simulate_federated_learning(node_histories: dict, rounds: int = None, tol: float = None) -> dict:
+def simulate_federated_learning(node_histories: dict, rounds: int = None, tol: float = None,
+                                 personalization_alpha: float = None) -> dict:
     """
     Run a full federated-learning simulation across a set of intersections.
 
@@ -180,6 +181,15 @@ def simulate_federated_learning(node_histories: dict, rounds: int = None, tol: f
             "transmitted" between LocalClient and FederatedServer.
         rounds: Number of federated rounds to run (default: config.FED_ROUNDS).
         tol: Convergence tolerance (default: config.FED_CONVERGENCE_TOL).
+        personalization_alpha: FIX for heterogeneous nodes — when set
+            (0.0-1.0), each client's final model is a convex blend of its
+            own local fit and the shared global model:
+                personalized = alpha * local + (1 - alpha) * global
+            Only (coef, intercept) pairs are still ever transmitted, so
+            communication overhead is unchanged; this just changes what
+            each client *uses* after receiving the global update, the same
+            way FedAvg-with-personalization / Per-FedAvg-style methods do.
+            Default: config.FED_PERSONALIZATION_ALPHA.
 
     Returns:
         dict: {
@@ -188,6 +198,8 @@ def simulate_federated_learning(node_histories: dict, rounds: int = None, tol: f
             "local_accuracy": {node_id: R^2 of that node's own local model},
             "global_accuracy_by_round": [avg R^2 of global model across all
                 clients, one entry per round],
+            "personalized_accuracy_by_round": [avg R^2 of each client's
+                personalized (alpha-blended) model, one entry per round],
             "global_weights_final": {"coef", "intercept"},
             "communication_overhead_bytes": int,
             "communication_overhead_per_round_bytes": int,
@@ -195,11 +207,15 @@ def simulate_federated_learning(node_histories: dict, rounds: int = None, tol: f
     """
     rounds = rounds if rounds is not None else _cfg.FED_ROUNDS
     tol = tol if tol is not None else _cfg.FED_CONVERGENCE_TOL
+    alpha = personalization_alpha if personalization_alpha is not None else getattr(
+        _cfg, "FED_PERSONALIZATION_ALPHA", 0.7
+    )
 
     clients = [LocalClient(nid, hist) for nid, hist in node_histories.items()]
     server = FederatedServer()
 
     global_accuracy_by_round = []
+    personalized_accuracy_by_round = []
     converged_round = None
 
     for round_idx in range(1, rounds + 1):
@@ -209,14 +225,22 @@ def simulate_federated_learning(node_histories: dict, rounds: int = None, tol: f
         # 2. Only parameters are sent to the server for aggregation.
         global_weights = server.aggregate(client_weights)
 
-        # 3. The updated global model is sent back to every intersection.
-        for client in clients:
-            client.set_weights(global_weights)
-
-        # 4. Evaluate the redistributed global model against each client's
-        #    own (still-local) data.
+        # 3. Evaluate the raw (un-personalized) global model, as before.
         round_scores = [client.evaluate(global_weights) for client in clients]
         global_accuracy_by_round.append(round(float(np.mean(round_scores)), 4))
+
+        # 4. FIX: evaluate a personalized blend instead of forcing every
+        #    client onto the same global model — this is what actually
+        #    gets used going forward.
+        personalized_scores = []
+        for client, local_w in zip(clients, client_weights):
+            blended = {
+                "coef": alpha * local_w["coef"] + (1 - alpha) * global_weights["coef"],
+                "intercept": alpha * local_w["intercept"] + (1 - alpha) * global_weights["intercept"],
+            }
+            personalized_scores.append(client.evaluate(blended))
+            client.set_weights(blended)
+        personalized_accuracy_by_round.append(round(float(np.mean(personalized_scores)), 4))
 
         if converged_round is None and server.has_converged(tol):
             converged_round = round_idx
@@ -225,7 +249,6 @@ def simulate_federated_learning(node_histories: dict, rounds: int = None, tol: f
     for client in clients:
         client.train_local()  # re-fit purely local model for reporting
         local_accuracy[client.node_id] = round(client.evaluate(), 4)
-        client.set_weights(server.global_weights)  # leave client holding global model
 
     per_round_bytes = communication_cost_bytes(len(clients), 1)
     total_bytes = communication_cost_bytes(len(clients), rounds)
@@ -235,6 +258,7 @@ def simulate_federated_learning(node_histories: dict, rounds: int = None, tol: f
         "converged_round": converged_round,
         "local_accuracy": local_accuracy,
         "global_accuracy_by_round": global_accuracy_by_round,
+        "personalized_accuracy_by_round": personalized_accuracy_by_round,
         "global_weights_final": dict(server.global_weights),
         "communication_overhead_bytes": total_bytes,
         "communication_overhead_per_round_bytes": per_round_bytes,
@@ -256,6 +280,7 @@ if __name__ == "__main__":
     print("Converged at round:       ", report["converged_round"])
     print("Local accuracy per node:  ", report["local_accuracy"])
     print("Global accuracy by round: ", report["global_accuracy_by_round"])
+    print("Personalized acc by round:", report["personalized_accuracy_by_round"])
     print("Final global weights:     ", report["global_weights_final"])
     print("Total comm overhead (B):  ", report["communication_overhead_bytes"])
     print("Per-round comm (B):       ", report["communication_overhead_per_round_bytes"])
